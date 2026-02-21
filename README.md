@@ -1,36 +1,163 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# InterviewSync - Interview Scheduling Platform
+
+A modern, Cal.com-style interview scheduling application built with Next.js 15 and Firebase, where both interviewers and applicants can manage their schedules and book interviews seamlessly.
+
+## Features
+
+### For Interviewers
+- **Availability Management**: Set your weekly availability with customizable time slots
+- **Event Types**: Create different interview types (Technical, HR, Final Round, etc.) with varying durations
+- **Dashboard**: View upcoming interviews, today's schedule, and past meetings
+- **Shareable Links**: Get a unique booking link to share with applicants
+
+### For Applicants
+- **Browse Interviewers**: Find available interviewers and their interview types
+- **Easy Booking**: Select a date and time slot that works for you
+- **Instant Confirmation**: Receive immediate booking confirmation with meeting details
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Backend**: Firebase (Auth + Firestore)
+- **UI Components**: Radix UI primitives
+- **Icons**: Lucide React
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+- Firebase project
+
+### Firebase Setup
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project (or use existing)
+3. Enable **Authentication** with Email/Password provider
+4. Enable **Firestore Database**
+5. Get your configuration:
+   - Go to Project Settings > General > Your apps > Add web app
+   - Copy the Firebase config values
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd interview_scheduler
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create `.env.local` file with your Firebase config:
+```env
+# Firebase Client SDK
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-To learn more about Next.js, take a look at the following resources:
+### Firestore Security Rules
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Add these rules to your Firestore:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Availability subcollection
+      match /availability/{dayId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Event types subcollection
+      match /eventTypes/{eventId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Bookings collection
+    match /bookings/{bookingId} {
+      allow read: if request.auth != null && 
+        (resource.data.interviewerId == request.auth.uid || 
+         resource.data.applicantId == request.auth.uid ||
+         resource.data.applicantEmail == request.auth.token.email);
+      allow create: if true;
+      allow update, delete: if request.auth != null && 
+        (resource.data.interviewerId == request.auth.uid || 
+         resource.data.applicantId == request.auth.uid);
+    }
+  }
+}
+```
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── availability/       # Availability settings page
+│   ├── book/               # Booking flow pages
+│   ├── dashboard/          # User dashboard
+│   ├── event-types/        # Event type management
+│   ├── login/              # Login page
+│   ├── register/           # Registration page
+│   └── page.tsx            # Landing page
+├── components/
+│   ├── ui/                 # Reusable UI components
+│   ├── calendar.tsx        # Date picker calendar
+│   ├── navbar.tsx          # Navigation bar
+│   ├── providers.tsx       # Context providers
+│   └── time-slots.tsx      # Time slot selector
+├── contexts/
+│   └── auth-context.tsx    # Firebase auth context
+├── lib/
+│   ├── firebase.ts         # Firebase client config
+│   ├── firebase-admin.ts   # Firebase admin config
+│   └── utils.ts            # Utility functions
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Usage
+
+### As an Interviewer
+
+1. Register with the "Interviewer" role
+2. Set your weekly availability in the Availability page
+3. Create event types for different interview formats
+4. Share your booking link with applicants
+5. Manage bookings from your dashboard
+
+### As an Applicant
+
+1. Register with the "Applicant" role (or book without an account)
+2. Browse available interviewers at `/book`
+3. Select an interview type
+4. Choose a date and time slot
+5. Enter your details and confirm the booking
+
+## License
+
+MIT License - feel free to use this project for your own purposes.

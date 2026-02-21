@@ -1,65 +1,291 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  Calendar,
+  Clock,
+  Users,
+  Zap,
+  ArrowRight,
+  CheckCircle2,
+  Sparkles,
+  Star,
+} from "lucide-react";
+
+const features = [
+  {
+    icon: Calendar,
+    title: "Smart Scheduling",
+    description:
+      "Set your availability once and let applicants book time slots that work for both parties.",
+    gradient: "from-violet-500 to-purple-500",
+  },
+  {
+    icon: Clock,
+    title: "Time Zone Aware",
+    description:
+      "Automatic time zone detection ensures everyone sees the correct meeting times.",
+    gradient: "from-cyan-500 to-blue-500",
+  },
+  {
+    icon: Users,
+    title: "Team Collaboration",
+    description:
+      "Multiple interviewers can manage their schedules independently on one platform.",
+    gradient: "from-rose-500 to-pink-500",
+  },
+  {
+    icon: Zap,
+    title: "Instant Confirmation",
+    description:
+      "Automatic confirmations and reminders keep everyone on the same page.",
+    gradient: "from-amber-500 to-orange-500",
+  },
+];
+
+const benefits = [
+  "No more back-and-forth emails",
+  "Reduce no-shows with reminders",
+  "Professional booking experience",
+  "Works with your calendar",
+];
+
+export default function HomePage() {
+  const { user } = useAuth();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen bg-[#050507] text-white overflow-hidden">
+      {/* Animated background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-900/30 via-[#050507] to-[#050507]" />
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-violet-500/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-fuchsia-500/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: "2s" }} />
+        
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+            backgroundSize: '60px 60px'
+          }}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+      </div>
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-5xl mx-auto">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm text-sm font-medium mb-8">
+              <Sparkles className="w-4 h-4 text-violet-400" />
+              <span className="text-white/70">Scheduling made simple</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
+
+            <h1 className="text-6xl lg:text-8xl font-bold tracking-tight mb-8 leading-[0.9]">
+              Schedule interviews
+              <br />
+              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-orange-400 bg-clip-text text-transparent">
+                without the hassle
+              </span>
+            </h1>
+
+            <p className="text-xl text-white/50 mb-12 max-w-2xl mx-auto leading-relaxed">
+              InterviewSync connects interviewers and applicants with a seamless
+              booking experience. Set your availability, share your link, and let
+              the scheduling happen automatically.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+              {user ? (
+                <Link href="/dashboard">
+                  <button className="group px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-lg hover:shadow-2xl hover:shadow-violet-500/30 transition-all duration-300 flex items-center gap-3">
+                    Go to Dashboard
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/register">
+                    <button className="group px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-lg hover:shadow-2xl hover:shadow-violet-500/30 transition-all duration-300 flex items-center gap-3">
+                      Get Started Free
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </Link>
+                  <Link href="/book">
+                    <button className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-semibold text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+                      Book an Interview
+                    </button>
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Benefits */}
+            <div className="flex flex-wrap items-center justify-center gap-8">
+              {benefits.map((benefit) => (
+                <div key={benefit} className="flex items-center gap-2 text-white/40">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  <span className="text-sm font-medium">{benefit}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Floating elements */}
+        <div className="absolute top-40 left-10 w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-white/10 backdrop-blur-sm flex items-center justify-center animate-float">
+          <Calendar className="w-8 h-8 text-violet-400" />
         </div>
-      </main>
+        <div className="absolute top-60 right-20 w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-white/10 backdrop-blur-sm flex items-center justify-center animate-float" style={{ animationDelay: "2s" }}>
+          <Clock className="w-6 h-6 text-cyan-400" />
+        </div>
+        <div className="absolute bottom-40 left-1/4 w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-white/10 backdrop-blur-sm flex items-center justify-center animate-float" style={{ animationDelay: "4s" }}>
+          <Star className="w-5 h-5 text-rose-400" />
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-32 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl lg:text-6xl font-bold mb-6">
+              Everything you need for
+              <br />
+              <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-orange-400 bg-clip-text text-transparent">
+                seamless scheduling
+              </span>
+            </h2>
+            <p className="text-lg text-white/40 max-w-2xl mx-auto">
+              Powerful features designed to make interview scheduling effortless
+              for both interviewers and applicants.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature, index) => (
+              <div
+                key={feature.title}
+                className="group relative p-8 rounded-3xl bg-white/[0.02] border border-white/10 hover:border-white/20 hover:bg-white/[0.04] transition-all duration-500"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg transition-all duration-300`}>
+                  <feature.icon className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
+                <p className="text-white/40 text-sm leading-relaxed">{feature.description}</p>
+                
+                {/* Hover glow effect */}
+                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500 -z-10`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-32 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl lg:text-6xl font-bold mb-6">
+              How it <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">works</span>
+            </h2>
+            <p className="text-lg text-white/40 max-w-2xl mx-auto">
+              Get started in minutes with our simple three-step process.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-12">
+            {[
+              {
+                step: "01",
+                title: "Set Your Availability",
+                description: "Interviewers define their available hours and create event types for different interview formats.",
+                gradient: "from-violet-500 to-purple-500",
+              },
+              {
+                step: "02",
+                title: "Share Your Link",
+                description: "Share your unique booking link with applicants or embed it on your careers page.",
+                gradient: "from-fuchsia-500 to-pink-500",
+              },
+              {
+                step: "03",
+                title: "Get Booked",
+                description: "Applicants pick a time that works for them, and both parties receive instant confirmation.",
+                gradient: "from-orange-500 to-amber-500",
+              },
+            ].map((item, index) => (
+              <div key={item.step} className="relative text-center">
+                {index < 2 && (
+                  <div className="hidden md:block absolute top-16 left-full w-full h-px bg-gradient-to-r from-white/20 to-transparent -translate-x-1/2" />
+                )}
+                <div className={`inline-flex items-center justify-center w-32 h-32 rounded-3xl bg-gradient-to-br ${item.gradient} text-white text-4xl font-bold mb-8 shadow-2xl`}>
+                  {item.step}
+                </div>
+                <h3 className="text-2xl font-bold mb-4 text-white">{item.title}</h3>
+                <p className="text-white/40 leading-relaxed">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative overflow-hidden rounded-[2.5rem] p-16 lg:p-24">
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-orange-500" />
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRoLTJ2LTRoMnY0em0wLTZ2LTRoLTJ2NGgyem0tNiA2aC00djJoNHYtMnptMC02aC00djJoNHYtMnptMC02aC00djJoNHYtMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
+            
+            <div className="relative text-center">
+              <h2 className="text-4xl lg:text-6xl font-bold text-white mb-6">
+                Ready to streamline
+                <br />
+                your interviews?
+              </h2>
+              <p className="text-xl text-white/80 mb-12 max-w-2xl mx-auto">
+                Join thousands of companies using InterviewSync to schedule
+                interviews efficiently.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link href="/register">
+                  <button className="px-8 py-4 rounded-2xl bg-white text-violet-600 font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                    Start for Free
+                  </button>
+                </Link>
+                <Link href="/book">
+                  <button className="px-8 py-4 rounded-2xl bg-white/10 border border-white/30 text-white font-semibold text-lg hover:bg-white/20 transition-all duration-300">
+                    Browse Interviewers
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-white/10 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                InterviewSync
+              </span>
+            </div>
+            <p className="text-sm text-white/30">
+              © 2026 InterviewSync. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
