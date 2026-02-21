@@ -54,53 +54,53 @@ export default function LoginPage() {
         }}
       />
 
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md px-4 sm:px-0">
         {/* Card */}
-        <div className="rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl p-8">
+        <div className="rounded-2xl sm:rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl p-6 sm:p-8">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-2xl shadow-violet-500/30">
-                <Calendar className="w-8 h-8 text-white" />
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="flex justify-center mb-4 sm:mb-6">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-2xl shadow-violet-500/30">
+                <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome back</h1>
-            <p className="text-white/50">Sign in to your InterviewSync account</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Welcome back</h1>
+            <p className="text-sm sm:text-base text-white/50">Sign in to your account</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {error && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              <div className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm">
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white/70">Email</label>
+              <label className="text-xs sm:text-sm font-medium text-white/70">Email</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white/30" />
                 <input
                   type="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-12 rounded-xl bg-white/5 border border-white/10 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                  className="w-full h-11 sm:h-12 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-10 sm:pl-12 pr-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white/70">Password</label>
+              <label className="text-xs sm:text-sm font-medium text-white/70">Password</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                <Lock className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white/30" />
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 rounded-xl bg-white/5 border border-white/10 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                  className="w-full h-11 sm:h-12 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-10 sm:pl-12 pr-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   required
                 />
               </div>
@@ -109,24 +109,24 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-300 disabled:opacity-50"
+              className="w-full h-11 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm sm:text-base font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-300 disabled:opacity-50"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                   Signing in...
                 </>
               ) : (
                 <>
                   Sign In
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 text-center">
-            <p className="text-sm text-white/50">
+          <div className="mt-6 sm:mt-8 text-center">
+            <p className="text-xs sm:text-sm text-white/50">
               Don&apos;t have an account?{" "}
               <Link href="/register" className="font-semibold text-violet-400 hover:text-violet-300 transition-colors">
                 Sign up

@@ -507,34 +507,34 @@ export default function BookingPage({
       <div className="min-h-screen bg-[#050507] flex items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/20 via-transparent to-transparent" />
         
-        <div className="relative rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-12 text-center max-w-lg w-full">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-amber-500/30">
-            <AlertTriangle className="w-10 h-10 text-white" />
+        <div className="relative rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-6 sm:p-12 text-center max-w-lg w-full">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-2xl shadow-amber-500/30">
+            <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-3">You Already Have a Booking</h2>
-          <p className="text-white/50 mb-8">
-            You can only have one active interview at a time. Cancel your existing booking to schedule a new one.
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">You Already Have a Booking</h2>
+          <p className="text-sm sm:text-base text-white/50 mb-6 sm:mb-8">
+            Cancel your existing booking to schedule a new one.
           </p>
 
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-6 text-left space-y-4 mb-8">
-            <div className="flex items-center gap-4">
-              <CalendarIcon className="w-5 h-5 text-amber-400" />
-              <div>
-                <p className="font-semibold text-white">Current Interview</p>
-                <p className="text-sm text-white/50">
-                  {existingBooking.startTime && format(existingBooking.startTime, "EEEE, MMMM d, yyyy")}
+          <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-6 text-left space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="font-semibold text-white text-sm sm:text-base">Current Interview</p>
+                <p className="text-xs sm:text-sm text-white/50 truncate">
+                  {existingBooking.startTime && format(existingBooking.startTime, "EEE, MMM d, yyyy")}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Clock className="w-5 h-5 text-amber-400" />
-              <p className="text-white/70">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0" />
+              <p className="text-sm sm:text-base text-white/70">
                 {existingBooking.startTime && format(existingBooking.startTime, "h:mm a")} - {existingBooking.endTime && format(existingBooking.endTime, "h:mm a")}
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <User className="w-5 h-5 text-amber-400" />
-              <p className="text-white/70">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0" />
+              <p className="text-sm sm:text-base text-white/70 truncate">
                 {existingBooking.interviewerName || existingBooking.interviewerEmail}
               </p>
             </div>
@@ -544,20 +544,20 @@ export default function BookingPage({
             <button
               onClick={cancelExistingBooking}
               disabled={cancelling}
-              className="w-full px-6 py-4 rounded-xl bg-gradient-to-r from-red-500 to-rose-500 text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-red-500/30 transition-all disabled:opacity-50"
+              className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-red-500 to-rose-500 text-white text-sm sm:text-base font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-red-500/30 transition-all disabled:opacity-50"
             >
               {cancelling ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <XCircle className="w-5 h-5" />
-                  Cancel Existing & Book New
+                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">Cancel & Book New</span>
                 </>
               )}
             </button>
             <button
               onClick={() => router.push("/dashboard")}
-              className="w-full px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
+              className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white text-sm sm:text-base font-medium hover:bg-white/10 transition-all"
             >
               Go to Dashboard
             </button>
@@ -573,34 +573,34 @@ export default function BookingPage({
       <div className="min-h-screen bg-[#050507] flex items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent" />
         
-        <div className="relative rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-12 text-center max-w-lg w-full">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/30">
-            <CheckCircle2 className="w-10 h-10 text-white" />
+        <div className="relative rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-6 sm:p-12 text-center max-w-lg w-full">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-2xl shadow-emerald-500/30">
+            <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-3">Interview Scheduled!</h2>
-          <p className="text-white/50 mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">Interview Scheduled!</h2>
+          <p className="text-sm sm:text-base text-white/50 mb-6 sm:mb-8">
             Your interview has been confirmed
           </p>
 
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-6 text-left space-y-4 mb-8">
-            <div className="flex items-center gap-4">
-              <CalendarIcon className="w-5 h-5 text-violet-400" />
-              <div>
-                <p className="font-semibold text-white">Interview</p>
-                <p className="text-sm text-white/50">
-                  {format(booking.startTime, "EEEE, MMMM d, yyyy")}
+          <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-6 text-left space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="font-semibold text-white text-sm sm:text-base">Interview</p>
+                <p className="text-xs sm:text-sm text-white/50 truncate">
+                  {format(booking.startTime, "EEE, MMM d, yyyy")}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Clock className="w-5 h-5 text-violet-400" />
-              <p className="text-white/70">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
+              <p className="text-sm sm:text-base text-white/70">
                 {format(booking.startTime, "h:mm a")} - {format(booking.endTime, "h:mm a")}
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <User className="w-5 h-5 text-violet-400" />
-              <p className="text-white/70">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
+              <p className="text-sm sm:text-base text-white/70 truncate">
                 {booking.interviewerName || booking.interviewerEmail}
               </p>
             </div>
@@ -611,17 +611,17 @@ export default function BookingPage({
               href={booking.meetingLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full mb-4 px-6 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
+              className="w-full mb-4 px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm sm:text-base font-semibold flex items-center justify-center gap-2 sm:gap-3 hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
             >
-              <Video className="w-5 h-5" />
+              <Video className="w-4 h-4 sm:w-5 sm:h-5" />
               Join Meeting
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
             </a>
           )}
 
           <button
             onClick={() => router.push("/dashboard")}
-            className="w-full px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
+            className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white text-sm sm:text-base font-medium hover:bg-white/10 transition-all"
           >
             Go to Dashboard
           </button>
@@ -645,55 +645,55 @@ export default function BookingPage({
         }}
       />
 
-      <div className="relative max-w-5xl mx-auto px-4 py-12 pt-24">
+      <div className="relative max-w-5xl mx-auto px-4 py-6 sm:py-12 pt-20 sm:pt-24">
         <button
           onClick={() => router.push("/book")}
-          className="mb-8 px-4 py-2 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+          className="mb-4 sm:mb-8 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2 text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to interviewers
         </button>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Sidebar - Interviewer Info */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-6">
-              <div className="flex items-center gap-4 mb-6">
-                <Avatar className="h-14 w-14 ring-2 ring-white/10">
+          <div className="lg:col-span-1 order-2 lg:order-1">
+            <div className="lg:sticky lg:top-24 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 sm:p-6">
+              <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <Avatar className="h-10 w-10 sm:h-14 sm:w-14 ring-2 ring-white/10">
                   <AvatarImage src={interviewer.image || ""} />
-                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-lg">
+                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-sm sm:text-lg">
                     {(interviewer.name || interviewer.email).charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="font-semibold text-white">
+                <div className="min-w-0">
+                  <p className="font-semibold text-white text-sm sm:text-base truncate">
                     {interviewer.name || interviewer.email}
                   </p>
-                  <p className="text-sm text-white/40">Interviewer</p>
+                  <p className="text-xs sm:text-sm text-white/40">Interviewer</p>
                 </div>
               </div>
 
-              <div className="w-full h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 mb-5" />
+              <div className="w-full h-1 sm:h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 mb-4 sm:mb-5" />
 
-              <h2 className="text-2xl font-bold text-white mb-2">Interview Session</h2>
-              <p className="text-white/40 text-sm mb-5">
+              <h2 className="text-lg sm:text-2xl font-bold text-white mb-1 sm:mb-2">Interview Session</h2>
+              <p className="text-white/40 text-xs sm:text-sm mb-4 sm:mb-5">
                 Book a time slot for your interview
               </p>
 
               {selectedDate && selectedTime && (
-                <div className="mt-6 pt-6 border-t border-white/10">
-                  <p className="text-sm font-medium text-white/50 mb-3">
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
+                  <p className="text-xs sm:text-sm font-medium text-white/50 mb-2 sm:mb-3">
                     Selected Time
                   </p>
-                  <div className="rounded-xl bg-violet-500/20 border border-violet-500/30 p-4">
-                    <p className="font-semibold text-violet-300">
-                      {format(new Date(selectedTime), "EEEE, MMMM d")}
+                  <div className="rounded-lg sm:rounded-xl bg-violet-500/20 border border-violet-500/30 p-3 sm:p-4">
+                    <p className="font-semibold text-violet-300 text-sm sm:text-base">
+                      {format(new Date(selectedTime), "EEE, MMM d")}
                     </p>
-                    <p className="text-sm text-violet-400">
+                    <p className="text-xs sm:text-sm text-violet-400">
                       {format(new Date(selectedTime), "h:mm a")} -{" "}
                       {format(addMinutes(new Date(selectedTime), getSelectedSlotDuration()), "h:mm a")}
                     </p>
-                    <p className="text-xs text-violet-400/70 mt-1">
+                    <p className="text-[10px] sm:text-xs text-violet-400/70 mt-1">
                       {getSelectedSlotDuration()} minutes
                     </p>
                   </div>
@@ -703,17 +703,17 @@ export default function BookingPage({
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-1 lg:order-2">
             {step === "date" ? (
-              <div className="rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
-                <div className="p-6 border-b border-white/10">
-                  <h2 className="text-xl font-bold text-white">Select a Date & Time</h2>
-                  <p className="text-white/40 text-sm mt-1">
+              <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
+                <div className="p-4 sm:p-6 border-b border-white/10">
+                  <h2 className="text-lg sm:text-xl font-bold text-white">Select a Date & Time</h2>
+                  <p className="text-white/40 text-xs sm:text-sm mt-1">
                     Green dates have available slots
                   </p>
                 </div>
-                <div className="p-6">
-                  <div className="grid md:grid-cols-2 gap-8">
+                <div className="p-4 sm:p-6">
+                  <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
                     {/* Calendar */}
                     <DarkCalendar
                       selected={selectedDate}
@@ -725,26 +725,26 @@ export default function BookingPage({
                     <div>
                       {selectedDate ? (
                         <>
-                          <h3 className="font-semibold text-white mb-4">
-                            {format(selectedDate, "EEEE, MMMM d")}
+                          <h3 className="font-semibold text-white text-sm sm:text-base mb-3 sm:mb-4">
+                            {format(selectedDate, "EEE, MMM d")}
                           </h3>
                           {loadingSlots ? (
-                            <div className="flex items-center justify-center py-12">
-                              <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+                            <div className="flex items-center justify-center py-8 sm:py-12">
+                              <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400 animate-spin" />
                             </div>
                           ) : slots.length === 0 ? (
-                            <div className="text-center py-12 text-white/40">
-                              <Clock className="w-8 h-8 mx-auto mb-3 text-white/20" />
-                              <p>No available slots</p>
+                            <div className="text-center py-8 sm:py-12 text-white/40">
+                              <Clock className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 sm:mb-3 text-white/20" />
+                              <p className="text-sm">No available slots</p>
                             </div>
                           ) : (
-                            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
+                            <div className="grid grid-cols-2 gap-2 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-2">
                               {slots.map((slot) => (
                                 <button
                                   key={slot.time}
                                   onClick={() => setSelectedTime(slot.time)}
                                   className={cn(
-                                    "px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
+                                    "px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200",
                                     selectedTime === slot.time
                                       ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30"
                                       : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
@@ -757,18 +757,18 @@ export default function BookingPage({
                           )}
                         </>
                       ) : (
-                        <div className="flex items-center justify-center h-full text-white/40">
-                          <p>Select a date to see available times</p>
+                        <div className="flex items-center justify-center h-full text-white/40 py-8">
+                          <p className="text-sm">Select a date to see times</p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {selectedTime && (
-                    <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
+                    <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-white/10 flex justify-end">
                       <button
                         onClick={() => setStep("details")}
-                        className="px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold flex items-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all"
+                        className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm sm:text-base font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all"
                       >
                         Continue
                         <ArrowRight className="w-4 h-4" />
@@ -778,64 +778,64 @@ export default function BookingPage({
                 </div>
               </div>
             ) : (
-              <div className="rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
-                <div className="p-6 border-b border-white/10">
-                  <h2 className="text-xl font-bold text-white">Enter Your Details</h2>
-                  <p className="text-white/40 text-sm mt-1">
-                    Please provide your information to complete the booking
+              <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
+                <div className="p-4 sm:p-6 border-b border-white/10">
+                  <h2 className="text-lg sm:text-xl font-bold text-white">Enter Your Details</h2>
+                  <p className="text-white/40 text-xs sm:text-sm mt-1">
+                    Provide your information to complete booking
                   </p>
                 </div>
-                <div className="p-6">
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="p-4 sm:p-6">
+                  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/70">Your Name</label>
+                      <label className="text-xs sm:text-sm font-medium text-white/70">Your Name</label>
                       <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                        <User className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white/30" />
                         <input
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           placeholder="John Doe"
-                          className="w-full h-12 rounded-xl bg-white/5 border border-white/10 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                          className="w-full h-11 sm:h-12 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-10 sm:pl-12 pr-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
                           required
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/70">Email Address</label>
+                      <label className="text-xs sm:text-sm font-medium text-white/70">Email Address</label>
                       <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+                        <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white/30" />
                         <input
                           type="email"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           placeholder="you@example.com"
-                          className="w-full h-12 rounded-xl bg-white/5 border border-white/10 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                          className="w-full h-11 sm:h-12 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-10 sm:pl-12 pr-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
                           required
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/70">
+                      <label className="text-xs sm:text-sm font-medium text-white/70">
                         Additional Notes (Optional)
                       </label>
                       <div className="relative">
-                        <MessageSquare className="absolute left-4 top-4 w-5 h-5 text-white/30" />
+                        <MessageSquare className="absolute left-3 sm:left-4 top-3 sm:top-4 w-4 h-4 sm:w-5 sm:h-5 text-white/30" />
                         <textarea
                           value={formData.notes}
                           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                           placeholder="Any additional information..."
-                          className="w-full min-h-[120px] rounded-xl bg-white/5 border border-white/10 pl-12 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all resize-none"
+                          className="w-full min-h-[100px] sm:min-h-[120px] rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all resize-none"
                         />
                       </div>
                     </div>
 
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
                       <button
                         type="button"
                         onClick={() => setStep("date")}
-                        className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium flex items-center gap-2 hover:bg-white/10 transition-all"
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white text-sm sm:text-base font-medium flex items-center justify-center gap-2 hover:bg-white/10 transition-all order-2 sm:order-1"
                       >
                         <ArrowLeft className="w-4 h-4" />
                         Back
@@ -843,7 +843,7 @@ export default function BookingPage({
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all disabled:opacity-50"
+                        className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm sm:text-base font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all disabled:opacity-50 order-1 sm:order-2"
                       >
                         {submitting ? (
                           <>

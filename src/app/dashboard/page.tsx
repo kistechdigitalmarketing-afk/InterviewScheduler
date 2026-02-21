@@ -182,143 +182,143 @@ export default function DashboardPage() {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pt-24">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-20 sm:pt-24">
         {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <Sparkles className="w-6 h-6 text-white" />
+        <div className="mb-6 sm:mb-12">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                 Welcome back, {userData.name?.split(" ")[0] || "there"}! 👋
               </h1>
-              <p className="text-white/50">
+              <p className="text-sm sm:text-base text-white/50">
                 {isInterviewer
-                  ? "Manage your availability and upcoming interviews"
-                  : "View your scheduled interviews and book new ones"}
+                  ? "Manage your availability and interviews"
+                  : "View your scheduled interviews"}
               </p>
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-                <Calendar className="w-7 h-7 text-white" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-12">
+          <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                <Calendar className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <p className="text-sm text-white/50">Today&apos;s Interviews</p>
-                <p className="text-3xl font-bold text-white">{todayBookings.length}</p>
+                <p className="text-xs sm:text-sm text-white/50">Today</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{todayBookings.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <CheckCircle2 className="w-7 h-7 text-white" />
+          <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <CheckCircle2 className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <p className="text-sm text-white/50">Upcoming</p>
-                <p className="text-3xl font-bold text-white">{upcomingBookings.length}</p>
+                <p className="text-xs sm:text-sm text-white/50">Upcoming</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{upcomingBookings.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center shadow-lg shadow-slate-500/30">
-                <Clock className="w-7 h-7 text-white" />
+          <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm p-4 sm:p-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center shadow-lg shadow-slate-500/30">
+                <Clock className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <p className="text-sm text-white/50">Completed</p>
-                <p className="text-3xl font-bold text-white">{pastBookings.length}</p>
+                <p className="text-xs sm:text-sm text-white/50">Completed</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{pastBookings.length}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Upcoming Interviews */}
-            <div className="rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
-              <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">Upcoming Interviews</h2>
+            <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
+              <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h2 className="text-lg sm:text-xl font-bold text-white">Upcoming Interviews</h2>
                 {!isInterviewer && (
                   <Link href="/book">
-                    <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-semibold flex items-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all">
+                    <button className="w-full sm:w-auto px-4 py-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all">
                       <Plus className="w-4 h-4" />
                       Book New
                     </button>
                   </Link>
                 )}
               </div>
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {upcomingBookings.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                      <AlertCircle className="w-8 h-8 text-white/20" />
+                  <div className="text-center py-8 sm:py-12">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white/20" />
                     </div>
-                    <p className="text-white/40">No upcoming interviews</p>
+                    <p className="text-sm sm:text-base text-white/40">No upcoming interviews</p>
                     {!isInterviewer && (
                       <Link href="/book">
-                        <button className="mt-4 text-violet-400 hover:text-violet-300 text-sm font-medium flex items-center gap-1 mx-auto">
-                          Book an interview <ArrowRight className="w-4 h-4" />
+                        <button className="mt-3 sm:mt-4 text-violet-400 hover:text-violet-300 text-xs sm:text-sm font-medium flex items-center gap-1 mx-auto">
+                          Book an interview <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       </Link>
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {upcomingBookings.slice(0, 5).map((booking) => (
                       <div
                         key={booking.id}
-                        className="group flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all"
+                        className="group flex items-start gap-3 sm:gap-4 p-3 sm:p-5 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all"
                       >
                         <div
-                          className="w-1.5 h-full min-h-[100px] rounded-full"
+                          className="w-1 sm:w-1.5 h-full min-h-[80px] sm:min-h-[100px] rounded-full flex-shrink-0"
                           style={{ backgroundColor: booking.eventTypeColor || "#a855f7" }}
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <h4 className="font-semibold text-white text-lg">
+                          <div className="flex items-start justify-between gap-2 sm:gap-4">
+                            <div className="min-w-0">
+                              <h4 className="font-semibold text-white text-sm sm:text-lg truncate">
                                 {booking.eventTypeTitle || "Interview"}
                               </h4>
-                              <div className="flex items-center gap-2 mt-2 text-sm text-white/50">
-                                <Calendar className="w-4 h-4" />
-                                {booking.startTime && format(booking.startTime, "EEEE, MMMM d")}
+                              <div className="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-2 text-xs sm:text-sm text-white/50">
+                                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                                <span className="truncate">{booking.startTime && format(booking.startTime, "EEE, MMM d")}</span>
                               </div>
-                              <div className="flex items-center gap-2 mt-1 text-sm text-white/50">
-                                <Clock className="w-4 h-4" />
+                              <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 text-xs sm:text-sm text-white/50">
+                                <Clock className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                                 {booking.startTime && format(booking.startTime, "h:mm a")} -{" "}
                                 {booking.endTime && format(booking.endTime, "h:mm a")}
                               </div>
                             </div>
                             <span className={cn(
-                              "px-3 py-1 rounded-lg text-xs font-medium",
+                              "px-2 sm:px-3 py-0.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-medium flex-shrink-0",
                               booking.status === "CONFIRMED" && "bg-emerald-500/20 text-emerald-400",
                               booking.status === "PENDING" && "bg-amber-500/20 text-amber-400",
                               booking.status === "CANCELLED" && "bg-red-500/20 text-red-400"
                             )}>
-                              {booking.status}
+                              {booking.status === "CONFIRMED" ? "CONF" : booking.status}
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-3 mt-4">
-                            <Avatar className="h-9 w-9 ring-2 ring-white/10">
-                              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-sm">
+                          <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
+                            <Avatar className="h-7 w-7 sm:h-9 sm:w-9 ring-2 ring-white/10 flex-shrink-0">
+                              <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-xs sm:text-sm">
                                 {isInterviewer
                                   ? (booking.applicantName || booking.applicantEmail || "A").charAt(0)
                                   : (booking.interviewerName || booking.interviewerEmail || "I").charAt(0)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="text-sm">
-                              <p className="font-medium text-white">
+                            <div className="text-xs sm:text-sm min-w-0">
+                              <p className="font-medium text-white truncate">
                                 {isInterviewer
                                   ? booking.applicantName || booking.applicantEmail
                                   : booking.interviewerName || booking.interviewerEmail}
@@ -334,11 +334,11 @@ export default function DashboardPage() {
                               href={booking.meetingLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-violet-500/20 text-violet-400 text-sm font-medium hover:bg-violet-500/30 transition-colors"
+                              className="inline-flex items-center gap-1.5 sm:gap-2 mt-3 sm:mt-4 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-violet-500/20 text-violet-400 text-xs sm:text-sm font-medium hover:bg-violet-500/30 transition-colors"
                             >
-                              <Video className="w-4 h-4" />
+                              <Video className="w-3 h-3 sm:w-4 sm:h-4" />
                               Join Meeting
-                              <ExternalLink className="w-3 h-3" />
+                              <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                             </a>
                           )}
                         </div>
@@ -351,46 +351,46 @@ export default function DashboardPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Meeting Link Settings (Interviewer only) */}
             {isInterviewer && (
-              <div className="rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-                      <Video className="w-5 h-5 text-white" />
+              <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
+                <div className="p-4 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
+                      <Video className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-white">Meeting Link</h3>
-                      <p className="text-xs text-white/50">Shown to applicants after booking</p>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-white text-sm sm:text-base">Meeting Link</h3>
+                      <p className="text-[10px] sm:text-xs text-white/50 truncate">Shown to applicants after booking</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     <div className="relative">
-                      <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                      <LinkIcon className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/30" />
                       <input
                         type="url"
                         value={meetingLink}
                         onChange={(e) => setMeetingLink(e.target.value)}
-                        placeholder="https://zoom.us/j/... or Google Meet link"
-                        className="w-full h-11 rounded-xl bg-white/5 border border-white/10 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                        placeholder="https://meet.google.com/..."
+                        className="w-full h-10 sm:h-11 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-8 sm:pl-10 pr-3 sm:pr-4 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
                       />
                     </div>
                     <button
                       onClick={saveMeetingLink}
                       disabled={savingLink}
-                      className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all disabled:opacity-50"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all disabled:opacity-50"
                     >
                       {savingLink ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : linkSaved ? (
                         <>
-                          <Check className="w-4 h-4" />
+                          <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           Saved!
                         </>
                       ) : (
                         <>
-                          <Save className="w-4 h-4" />
+                          <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           Save Link
                         </>
                       )}
@@ -402,29 +402,29 @@ export default function DashboardPage() {
 
             {/* Share Link (Interviewer only) */}
             {isInterviewer && (
-              <div className="rounded-3xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-violet-500/30 backdrop-blur-xl overflow-hidden">
-                <div className="p-6">
-                  <h3 className="font-bold text-white mb-2">Share Your Booking Link</h3>
-                  <p className="text-sm text-white/60 mb-4">
+              <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-violet-500/30 backdrop-blur-xl overflow-hidden">
+                <div className="p-4 sm:p-6">
+                  <h3 className="font-bold text-white text-sm sm:text-base mb-1 sm:mb-2">Share Your Booking Link</h3>
+                  <p className="text-xs sm:text-sm text-white/60 mb-3 sm:mb-4">
                     Let applicants book time with you directly
                   </p>
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-black/20 border border-white/10 text-sm text-white/70 mb-4">
-                    <span className="truncate flex-1">
+                  <div className="flex items-center gap-2 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-black/20 border border-white/10 text-xs sm:text-sm text-white/70 mb-3 sm:mb-4">
+                    <span className="truncate flex-1 text-[10px] sm:text-sm">
                       {typeof window !== "undefined" ? window.location.origin : ""}/book/{user.uid}
                     </span>
                   </div>
                   <button
                     onClick={copyLink}
-                    className="w-full px-4 py-3 rounded-xl bg-white text-violet-600 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-violet-50 transition-colors"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white text-violet-600 font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-violet-50 transition-colors"
                   >
                     {copied ? (
                       <>
-                        <Check className="w-4 h-4" />
+                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         Copied!
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4" />
+                        <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         Copy Link
                       </>
                     )}
