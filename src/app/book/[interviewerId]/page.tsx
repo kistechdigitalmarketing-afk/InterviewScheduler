@@ -307,11 +307,14 @@ export default function BookingPage({
         );
         const bookingsSnapshot = await getDocs(bookingsQuery);
         const existingBookings = bookingsSnapshot.docs
-          .map((doc) => ({
-            ...doc.data(),
-            startTime: doc.data().startTime?.toDate(),
-            endTime: doc.data().endTime?.toDate(),
-          }))
+          .map((doc) => {
+            const data = doc.data();
+            return {
+              status: data.status as string,
+              startTime: data.startTime?.toDate() as Date,
+              endTime: data.endTime?.toDate() as Date,
+            };
+          })
           .filter((b) => b.status !== "CANCELLED");
 
         const now = new Date();

@@ -20,7 +20,7 @@ interface UserData {
   image: string | null;
   timezone: string;
   meetingLink: string | null;
-  createdAt: Date;
+  createdAt: Date | null;
 }
 
 interface AuthContextType {
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await updateProfile(user, { displayName: name });
 
     // Create user document in Firestore
-    const userDocData = {
+    const userDocData: UserData = {
       uid: user.uid,
       email: user.email,
       name: name,
@@ -85,10 +85,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       image: null,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       meetingLink: null,
-      createdAt: serverTimestamp(),
+      createdAt: new Date(),
     };
 
-    await setDoc(doc(db, "users", user.uid), userDocData);
+    await setDoc(doc(db, "users", user.uid), {
+      ...userDocData,
+      createdAt: serverTimestamp(),
+    });
 
     // If interviewer, create default availability
     if (role === "INTERVIEWER") {
@@ -114,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    setUserData(userDocData as UserData);
+    setUserData(userDocData);
   };
 
   const signOut = async () => {
