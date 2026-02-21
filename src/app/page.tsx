@@ -10,7 +10,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Sparkles,
-  Star,
 } from "lucide-react";
 
 const features = [
@@ -142,9 +141,6 @@ export default function HomePage() {
         <div className="absolute top-60 right-20 w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-white/10 backdrop-blur-sm flex items-center justify-center animate-float" style={{ animationDelay: "2s" }}>
           <Clock className="w-6 h-6 text-cyan-400" />
         </div>
-        <div className="absolute bottom-40 left-1/4 w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500/20 to-pink-500/20 border border-white/10 backdrop-blur-sm flex items-center justify-center animate-float" style={{ animationDelay: "4s" }}>
-          <Star className="w-5 h-5 text-rose-400" />
-        </div>
       </section>
 
       {/* Features Section */}
@@ -238,7 +234,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative overflow-hidden rounded-[2.5rem] p-16 lg:p-24">
             {/* Background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-600 to-orange-500" />
+            <div className="absolute inset-0 bg-violet-600" />
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRoLTJ2LTRoMnY0em0wLTZ2LTRoLTJ2NGgyem0tNiA2aC00djJoNHYtMnptMC02aC00djJoNHYtMnptMC02aC00djJoNHYtMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
             
             <div className="relative text-center">

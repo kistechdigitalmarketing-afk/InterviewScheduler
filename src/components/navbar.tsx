@@ -18,9 +18,6 @@ export function Navbar() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
               <Calendar className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-              InterviewSync
-            </span>
           </Link>
 
           {/* Desktop Navigation */}
