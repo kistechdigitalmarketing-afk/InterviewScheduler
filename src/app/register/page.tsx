@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { Calendar, Mail, Lock, User, ArrowRight, Loader2, Briefcase, UserCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Calendar, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -13,7 +12,6 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"INTERVIEWER" | "APPLICANT">("APPLICANT");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +21,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await signUp(email, password, name, role);
+      await signUp(email, password, name, "INTERVIEWER");
       router.push("/dashboard");
     } catch (err: any) {
       console.error(err);
@@ -80,39 +78,6 @@ export default function RegisterPage() {
                 {error}
               </div>
             )}
-
-            {/* Role Selection */}
-            <div className="space-y-2 sm:space-y-3">
-              <label className="text-xs sm:text-sm font-medium text-white/70">I am a...</label>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRole("APPLICANT")}
-                  className={cn(
-                    "flex flex-col items-center gap-1.5 sm:gap-2 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all duration-300",
-                    role === "APPLICANT"
-                      ? "border-violet-500 bg-violet-500/10 text-violet-400"
-                      : "border-white/10 hover:border-white/20 text-white/50 hover:text-white/70"
-                  )}
-                >
-                  <UserCircle className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span className="text-xs sm:text-sm font-medium">Applicant</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole("INTERVIEWER")}
-                  className={cn(
-                    "flex flex-col items-center gap-1.5 sm:gap-2 p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all duration-300",
-                    role === "INTERVIEWER"
-                      ? "border-fuchsia-500 bg-fuchsia-500/10 text-fuchsia-400"
-                      : "border-white/10 hover:border-white/20 text-white/50 hover:text-white/70"
-                  )}
-                >
-                  <Briefcase className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span className="text-xs sm:text-sm font-medium">Interviewer</span>
-                </button>
-              </div>
-            </div>
 
             <div className="space-y-2">
               <label className="text-xs sm:text-sm font-medium text-white/70">Full Name</label>
