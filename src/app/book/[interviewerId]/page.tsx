@@ -39,6 +39,7 @@ interface EventType {
   title: string;
   description: string;
   color: string;
+  meetingLink?: string;
 }
 
 interface TimeSlot {
@@ -393,7 +394,7 @@ export default function BookingPage({
         eventTypeTitle: eventType?.title || "Interview",
         eventTypeColor: eventType?.color || "#6366f1",
         notes: formData.notes || null,
-        meetingLink: interviewer.meetingLink || null,
+        meetingLink: eventType?.meetingLink || null,
         status: "CONFIRMED",
         createdAt: serverTimestamp(),
       };
@@ -406,7 +407,7 @@ export default function BookingPage({
         endTime,
         interviewerName: interviewer.name,
         interviewerEmail: interviewer.email,
-        meetingLink: interviewer.meetingLink,
+        meetingLink: eventType?.meetingLink || null,
       });
       setStep("confirmed");
     } catch (error) {

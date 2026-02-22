@@ -15,6 +15,7 @@ interface EventType {
   title: string;
   description: string;
   color: string;
+  meetingLink?: string;
 }
 
 interface TimeSlot {

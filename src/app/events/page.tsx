@@ -18,6 +18,8 @@ import {
   Palette,
   ArrowRight,
   CalendarClock,
+  Video,
+  Link as LinkIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +29,7 @@ interface EventType {
   slug: string;
   description: string;
   color: string;
+  meetingLink: string;
   isActive: boolean;
 }
 
@@ -73,6 +76,7 @@ export default function EventsPage() {
     title: "",
     description: "",
     color: "#6366f1",
+    meetingLink: "",
   });
 
   useEffect(() => {
@@ -114,6 +118,7 @@ export default function EventsPage() {
       title: "",
       description: "",
       color: "#6366f1",
+      meetingLink: "",
     });
     setEditingEvent(null);
     setShowForm(false);
@@ -124,6 +129,7 @@ export default function EventsPage() {
       title: eventType.title,
       description: eventType.description || "",
       color: eventType.color,
+      meetingLink: eventType.meetingLink || "",
     });
     setEditingEvent(eventType);
     setShowForm(true);
@@ -144,6 +150,7 @@ export default function EventsPage() {
         slug,
         description: formData.description.trim(),
         color: formData.color,
+        meetingLink: formData.meetingLink.trim(),
         isActive: true,
       };
 
@@ -325,6 +332,28 @@ export default function EventsPage() {
                 </div>
               </div>
 
+              {/* Meeting Link */}
+              <div>
+                <label className="text-xs sm:text-sm font-medium text-white/70 mb-2 block">
+                  Meeting Link
+                </label>
+                <div className="relative">
+                  <LinkIcon className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                  <input
+                    type="url"
+                    value={formData.meetingLink}
+                    onChange={(e) =>
+                      setFormData({ ...formData, meetingLink: e.target.value })
+                    }
+                    placeholder="https://meet.google.com/... or https://zoom.us/..."
+                    className="w-full h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 pl-10 sm:pl-12 pr-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                  />
+                </div>
+                <p className="text-[10px] sm:text-xs text-white/40 mt-1.5">
+                  This link will be shared with applicants after booking this event type
+                </p>
+              </div>
+
               {/* Submit */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
                 <button
@@ -396,10 +425,16 @@ export default function EventsPage() {
                             {eventType.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-3 mt-2">
+                        <div className="flex items-center gap-3 mt-2 flex-wrap">
                           <span className="text-xs text-white/40">
                             /{eventType.slug}
                           </span>
+                          {eventType.meetingLink && (
+                            <span className="inline-flex items-center gap-1 text-xs text-emerald-400/70">
+                              <Video className="w-3 h-3" />
+                              Link added
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

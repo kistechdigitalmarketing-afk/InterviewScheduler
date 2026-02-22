@@ -19,8 +19,6 @@ import {
   Sparkles,
   Copy,
   Check,
-  Link as LinkIcon,
-  Save,
   CalendarDays,
   Settings,
 } from "lucide-react";
@@ -45,14 +43,11 @@ interface Booking {
 }
 
 export default function DashboardPage() {
-  const { user, userData, loading: authLoading, updateUserData } = useAuth();
+  const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [meetingLink, setMeetingLink] = useState("");
-  const [savingLink, setSavingLink] = useState(false);
-  const [linkSaved, setLinkSaved] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -152,27 +147,6 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(`${window.location.origin}/book/${user?.uid}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Initialize meeting link from userData
-  useEffect(() => {
-    if (userData?.meetingLink) {
-      setMeetingLink(userData.meetingLink);
-    }
-  }, [userData?.meetingLink]);
-
-  const saveMeetingLink = async () => {
-    if (!updateUserData) return;
-    setSavingLink(true);
-    try {
-      await updateUserData({ meetingLink: meetingLink || null });
-      setLinkSaved(true);
-      setTimeout(() => setLinkSaved(false), 2000);
-    } catch (error) {
-      console.error("Error saving meeting link:", error);
-    } finally {
-      setSavingLink(false);
-    }
   };
 
   if (authLoading || loading) {
@@ -446,54 +420,6 @@ export default function DashboardPage() {
                         <ArrowRight className="w-4 h-4 text-white/30 ml-auto" />
                       </button>
                     </Link>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Meeting Link Settings (Interviewer only) */}
-            {isInterviewer && (
-              <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
-                <div className="p-4 sm:p-6">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
-                      <Video className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-white text-sm sm:text-base">Meeting Link</h3>
-                      <p className="text-[10px] sm:text-xs text-white/50 truncate">Shown to applicants after booking</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2 sm:space-y-3">
-                    <div className="relative">
-                      <LinkIcon className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/30" />
-                      <input
-                        type="url"
-                        value={meetingLink}
-                        onChange={(e) => setMeetingLink(e.target.value)}
-                        placeholder="https://meet.google.com/..."
-                        className="w-full h-10 sm:h-11 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-8 sm:pl-10 pr-3 sm:pr-4 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
-                      />
-                    </div>
-                    <button
-                      onClick={saveMeetingLink}
-                      disabled={savingLink}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all disabled:opacity-50"
-                    >
-                      {savingLink ? (
-                        <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : linkSaved ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          Saved!
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          Save Link
-                        </>
-                      )}
-                    </button>
                   </div>
                 </div>
               </div>
