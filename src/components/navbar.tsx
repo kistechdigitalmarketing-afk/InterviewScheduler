@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
-import { Calendar, LogOut, Settings, LayoutDashboard, Menu, X } from "lucide-react";
+import { Calendar, LogOut, Settings, LayoutDashboard, Menu, X, CalendarDays } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useState } from "react";
 
@@ -33,12 +33,20 @@ export function Navbar() {
                   </button>
                 </Link>
                 {userData?.role === "INTERVIEWER" && (
-                  <Link href="/availability">
-                    <button className="px-4 py-2 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2">
-                      <Settings className="w-4 h-4" />
-                      Availability
-                    </button>
-                  </Link>
+                  <>
+                    <Link href="/events">
+                      <button className="px-4 py-2 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2">
+                        <CalendarDays className="w-4 h-4" />
+                        Events
+                      </button>
+                    </Link>
+                    <Link href="/availability">
+                      <button className="px-4 py-2 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2">
+                        <Settings className="w-4 h-4" />
+                        Availability
+                      </button>
+                    </Link>
+                  </>
                 )}
                 <div className="flex items-center gap-3 pl-4 ml-2 border-l border-white/10">
                   <Avatar className="h-8 w-8 ring-2 ring-white/10">
@@ -93,12 +101,20 @@ export function Navbar() {
                     </button>
                   </Link>
                   {userData?.role === "INTERVIEWER" && (
-                    <Link href="/availability" onClick={() => setMobileMenuOpen(false)}>
-                      <button className="w-full px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2">
-                        <Settings className="w-4 h-4" />
-                        Availability
-                      </button>
-                    </Link>
+                    <>
+                      <Link href="/events" onClick={() => setMobileMenuOpen(false)}>
+                        <button className="w-full px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2">
+                          <CalendarDays className="w-4 h-4" />
+                          Events
+                        </button>
+                      </Link>
+                      <Link href="/availability" onClick={() => setMobileMenuOpen(false)}>
+                        <button className="w-full px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2">
+                          <Settings className="w-4 h-4" />
+                          Availability
+                        </button>
+                      </Link>
+                    </>
                   )}
                   <button
                     onClick={() => {

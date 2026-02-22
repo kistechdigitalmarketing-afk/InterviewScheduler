@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { format, addMinutes, isSameDay, isFuture } from "date-fns";
 import { doc, getDoc, collection, getDocs, addDoc, query, where, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useAuth } from "@/contexts/auth-context";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -20,6 +19,7 @@ import {
   ExternalLink,
   AlertTriangle,
   XCircle,
+  FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -34,9 +34,18 @@ interface InterviewerData {
   meetingLink: string | null;
 }
 
+interface EventType {
+  id: string;
+  title: string;
+  description: string;
+  color: string;
+}
+
 interface TimeSlot {
   time: string;
   formatted: string;
+  duration: number;
+  eventTypeId?: string;
 }
 
 interface AvailabilitySlot {
@@ -44,6 +53,7 @@ interface AvailabilitySlot {
   startTime: string;
   endTime: string;
   duration: number;
+  eventTypeId?: string;
 }
 
 interface DayAvailability {
@@ -176,11 +186,12 @@ export default function BookingPage({
 }) {
   const { interviewerId } = use(params);
   const router = useRouter();
-  const { user, userData } = useAuth();
   const [interviewer, setInterviewer] = useState<InterviewerData | null>(null);
+  const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
+  const [selectedSlotData, setSelectedSlotData] = useState<TimeSlot | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [step, setStep] = useState<"date" | "details" | "confirmed" | "has-booking">("date");
@@ -210,6 +221,16 @@ export default function BookingPage({
           });
         }
 
+        // Fetch event types
+        const eventTypesRef = collection(db, "users", interviewerId, "eventTypes");
+        const eventTypesSnapshot = await getDocs(eventTypesRef);
+        const eventTypesData = eventTypesSnapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as EventType[];
+        setEventTypes(eventTypesData.filter(e => e.title)); // Only include valid event types
+
         const availabilityRef = collection(db, "users", interviewerId, "availability");
         const availabilitySnapshot = await getDocs(availabilityRef);
         const availabilityData = availabilitySnapshot.docs.map((doc) => ({
@@ -227,54 +248,7 @@ export default function BookingPage({
     fetchData();
   }, [interviewerId]);
 
-  // Check if applicant already has an active booking
-  useEffect(() => {
-    const checkExistingBooking = async () => {
-      if (!user) return;
-
-      try {
-        const bookingsRef = collection(db, "bookings");
-        const bookingsQuery = query(
-          bookingsRef,
-          where("applicantId", "==", user.uid),
-          where("status", "in", ["CONFIRMED", "PENDING"])
-        );
-        const bookingsSnapshot = await getDocs(bookingsQuery);
-        
-        // Find any future booking
-        const futureBooking = bookingsSnapshot.docs.find((doc) => {
-          const data = doc.data();
-          const startTime = data.startTime?.toDate();
-          return startTime && isFuture(startTime);
-        });
-
-        if (futureBooking) {
-          const data = futureBooking.data();
-          setExistingBooking({
-            id: futureBooking.id,
-            ...data,
-            startTime: data.startTime?.toDate(),
-            endTime: data.endTime?.toDate(),
-          });
-          setStep("has-booking");
-        }
-      } catch (error) {
-        console.error("Error checking existing booking:", error);
-      }
-    };
-
-    checkExistingBooking();
-  }, [user]);
-
-  useEffect(() => {
-    if (userData) {
-      setFormData((prev) => ({
-        ...prev,
-        name: userData.name || "",
-        email: userData.email || "",
-      }));
-    }
-  }, [userData]);
+  // No login required for applicants - they just fill in their details
 
   useEffect(() => {
     const fetchSlots = async () => {
@@ -344,6 +318,8 @@ export default function BookingPage({
             availableSlots.push({
               time: slotDate.toISOString(),
               formatted: format(slotDate, "h:mm a"),
+              duration: slotDuration,
+              eventTypeId: slot.eventTypeId,
             });
           }
         }
@@ -361,29 +337,21 @@ export default function BookingPage({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTime || !interviewer) return;
+    if (!selectedTime || !interviewer || !selectedSlotData) return;
 
     setSubmitting(true);
 
     try {
-      // Find the selected slot to get its duration
-      const dateStr = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
-      const dayAvailability = availability.find((a) => a.date === dateStr);
-      const selectedSlotTime = new Date(selectedTime);
-      const selectedSlot = dayAvailability?.slots.find((s) => {
-        const [hours, minutes] = s.startTime.split(":").map(Number);
-        return hours === selectedSlotTime.getHours() && minutes === selectedSlotTime.getMinutes();
-      });
-      
-      const duration = selectedSlot?.duration || INTERVIEW_DURATION;
+      const duration = selectedSlotData.duration || INTERVIEW_DURATION;
       const startTime = new Date(selectedTime);
       const endTime = addMinutes(startTime, duration);
 
-      // Check if this email already has an active booking
+      // Check if this email already has an active booking with this interviewer
       const bookingsRef = collection(db, "bookings");
       const emailQuery = query(
         bookingsRef,
         where("applicantEmail", "==", formData.email),
+        where("interviewerId", "==", interviewerId),
         where("status", "in", ["CONFIRMED", "PENDING"])
       );
       const emailBookingsSnapshot = await getDocs(emailQuery);
@@ -406,16 +374,24 @@ export default function BookingPage({
         return;
       }
 
+      // Get event type details if available
+      const eventType = selectedSlotData.eventTypeId 
+        ? eventTypes.find(e => e.id === selectedSlotData.eventTypeId)
+        : null;
+
       const bookingData = {
         interviewerId,
         interviewerName: interviewer.name,
         interviewerEmail: interviewer.email,
-        applicantId: user?.uid || null,
+        applicantId: null,
         applicantName: formData.name,
         applicantEmail: formData.email,
         startTime,
         endTime,
         duration,
+        eventTypeId: selectedSlotData.eventTypeId || null,
+        eventTypeTitle: eventType?.title || "Interview",
+        eventTypeColor: eventType?.color || "#6366f1",
         notes: formData.notes || null,
         meetingLink: interviewer.meetingLink || null,
         status: "CONFIRMED",
@@ -445,15 +421,13 @@ export default function BookingPage({
 
   // Get selected slot duration for display
   const getSelectedSlotDuration = () => {
-    if (!selectedDate || !selectedTime) return INTERVIEW_DURATION;
-    const dateStr = format(selectedDate, "yyyy-MM-dd");
-    const dayAvailability = availability.find((a) => a.date === dateStr);
-    const selectedSlotTime = new Date(selectedTime);
-    const selectedSlot = dayAvailability?.slots.find((s) => {
-      const [hours, minutes] = s.startTime.split(":").map(Number);
-      return hours === selectedSlotTime.getHours() && minutes === selectedSlotTime.getMinutes();
-    });
-    return selectedSlot?.duration || INTERVIEW_DURATION;
+    return selectedSlotData?.duration || INTERVIEW_DURATION;
+  };
+
+  // Get event type for selected slot
+  const getSelectedEventType = () => {
+    if (!selectedSlotData?.eventTypeId) return null;
+    return eventTypes.find(e => e.id === selectedSlotData.eventTypeId);
   };
 
   const cancelExistingBooking = async () => {
@@ -606,25 +580,39 @@ export default function BookingPage({
             </div>
           </div>
 
-          {booking.meetingLink && (
-            <a
-              href={booking.meetingLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full mb-4 px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm sm:text-base font-semibold flex items-center justify-center gap-2 sm:gap-3 hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
-            >
-              <Video className="w-4 h-4 sm:w-5 sm:h-5" />
-              Join Meeting
-              <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
-            </a>
+          {booking.meetingLink ? (
+            <div className="w-full rounded-xl sm:rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 sm:p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <Video className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm sm:text-base font-medium text-white mb-1">Meeting Link</p>
+                  <p className="text-xs sm:text-sm text-white/50">
+                    Please use the link below to join your interview at the scheduled time.
+                  </p>
+                </div>
+              </div>
+              <a
+                href={booking.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-all truncate text-center"
+              >
+                {booking.meetingLink}
+              </a>
+            </div>
+          ) : (
+            <div className="w-full rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm sm:text-base font-medium text-white mb-1">Meeting Details Pending</p>
+                  <p className="text-xs sm:text-sm text-white/50">
+                    The meeting link and additional details will be communicated to you via email within 1-2 business days. Please ensure your contact information is correct.
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
-
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white text-sm sm:text-base font-medium hover:bg-white/10 transition-all"
-          >
-            Go to Dashboard
-          </button>
         </div>
       </div>
     );
@@ -680,12 +668,49 @@ export default function BookingPage({
                 Book a time slot for your interview
               </p>
 
-              {selectedDate && selectedTime && (
+              {/* Event Types Available */}
+              {eventTypes.length > 0 && (
+                <div className="mb-4 sm:mb-5">
+                  <p className="text-xs font-medium text-white/50 mb-2">Available Session Types</p>
+                  <div className="space-y-2">
+                    {eventTypes.map((eventType) => (
+                      <div
+                        key={eventType.id}
+                        className="p-3 rounded-lg bg-white/5 border border-white/10"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: eventType.color || "#6366f1" }}
+                          />
+                          <span className="text-sm font-medium text-white">{eventType.title}</span>
+                        </div>
+                        {eventType.description && (
+                          <p className="text-xs text-white/40 ml-4">{eventType.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedDate && selectedTime && selectedSlotData && (
                 <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
                   <p className="text-xs sm:text-sm font-medium text-white/50 mb-2 sm:mb-3">
                     Selected Time
                   </p>
                   <div className="rounded-lg sm:rounded-xl bg-violet-500/20 border border-violet-500/30 p-3 sm:p-4">
+                    {getSelectedEventType() && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: getSelectedEventType()?.color || "#6366f1" }}
+                        />
+                        <span className="text-xs font-medium text-violet-300">
+                          {getSelectedEventType()?.title}
+                        </span>
+                      </div>
+                    )}
                     <p className="font-semibold text-violet-300 text-sm sm:text-base">
                       {format(new Date(selectedTime), "EEE, MMM d")}
                     </p>
@@ -739,20 +764,27 @@ export default function BookingPage({
                             </div>
                           ) : (
                             <div className="grid grid-cols-2 gap-2 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-2">
-                              {slots.map((slot) => (
-                                <button
-                                  key={slot.time}
-                                  onClick={() => setSelectedTime(slot.time)}
-                                  className={cn(
-                                    "px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200",
-                                    selectedTime === slot.time
-                                      ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30"
-                                      : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
-                                  )}
-                                >
-                                  {slot.formatted}
-                                </button>
-                              ))}
+                              {slots.map((slot) => {
+                                const slotEventType = slot.eventTypeId ? eventTypes.find(e => e.id === slot.eventTypeId) : null;
+                                return (
+                                  <button
+                                    key={slot.time}
+                                    onClick={() => {
+                                      setSelectedTime(slot.time);
+                                      setSelectedSlotData(slot);
+                                    }}
+                                    className={cn(
+                                      "px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 text-left",
+                                      selectedTime === slot.time
+                                        ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30"
+                                        : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
+                                    )}
+                                  >
+                                    <span className="block">{slot.formatted}</span>
+                                    <span className="text-[10px] opacity-70">{slot.duration} min</span>
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                         </>

@@ -1,12 +1,11 @@
 # InterviewSync - Interview Scheduling Platform
 
-A modern, Cal.com-style interview scheduling application built with Next.js 15 and Firebase, where both interviewers and applicants can manage their schedules and book interviews seamlessly.
+A  interview scheduling application built with Next.js 15 and Firebase, where both interviewers and applicants can manage their schedules and book interviews seamlessly.
 
 ## Features
 
 ### For Interviewers
 - **Availability Management**: Set your weekly availability with customizable time slots
-- **Event Types**: Create different interview types (Technical, HR, Final Round, etc.) with varying durations
 - **Dashboard**: View upcoming interviews, today's schedule, and past meetings
 - **Shareable Links**: Get a unique booking link to share with applicants
 
@@ -15,14 +14,7 @@ A modern, Cal.com-style interview scheduling application built with Next.js 15 a
 - **Easy Booking**: Select a date and time slot that works for you
 - **Instant Confirmation**: Receive immediate booking confirmation with meeting details
 
-## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Backend**: Firebase (Auth + Firestore)
-- **UI Components**: Radix UI primitives
-- **Icons**: Lucide React
 
 ## Getting Started
 
@@ -114,7 +106,7 @@ service cloud.firestore {
 }
 ```
 
-## Project Structure
+
 
 ```
 src/
@@ -140,24 +132,3 @@ src/
 │   └── utils.ts            # Utility functions
 ```
 
-## Usage
-
-### As an Interviewer
-
-1. Register with the "Interviewer" role
-2. Set your weekly availability in the Availability page
-3. Create event types for different interview formats
-4. Share your booking link with applicants
-5. Manage bookings from your dashboard
-
-### As an Applicant
-
-1. Register with the "Applicant" role (or book without an account)
-2. Browse available interviewers at `/book`
-3. Select an interview type
-4. Choose a date and time slot
-5. Enter your details and confirm the booking
-
-## License
-
-MIT License - feel free to use this project for your own purposes.

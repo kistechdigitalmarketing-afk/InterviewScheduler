@@ -3,17 +3,26 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { doc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, isSameDay } from "date-fns";
-import { Clock, Loader2, Check, Plus, X, Trash2, CalendarDays, Sparkles } from "lucide-react";
+import { Clock, Loader2, Check, Plus, X, Trash2, CalendarDays, Sparkles, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface EventType {
+  id: string;
+  title: string;
+  description: string;
+  color: string;
+}
 
 interface TimeSlot {
   id: string;
   startTime: string;
   endTime: string;
   duration: number;
+  eventTypeId?: string;
 }
 
 interface DayAvailability {
@@ -21,31 +30,21 @@ interface DayAvailability {
   slots: TimeSlot[];
 }
 
-const DURATIONS = [
-  { value: 15, label: "15 min", color: "from-cyan-500 to-blue-500" },
-  { value: 30, label: "30 min", color: "from-violet-500 to-purple-500" },
-  { value: 60, label: "60 min", color: "from-rose-500 to-pink-500" },
-];
-
-const TIME_OPTIONS = [
-  "06:00", "06:30", "07:00", "07:30", "08:00", "08:30",
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-  "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-  "18:00", "18:30", "19:00", "19:30", "20:00", "20:30",
-  "21:00", "21:30", "22:00",
-];
+const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
+const MINUTES = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9);
 }
 
-function addMinutesToTime(time: string, minutes: number): string {
-  const [hours, mins] = time.split(":").map(Number);
-  const totalMins = hours * 60 + mins + minutes;
-  const newHours = Math.floor(totalMins / 60) % 24;
-  const newMins = totalMins % 60;
-  return `${newHours.toString().padStart(2, "0")}:${newMins.toString().padStart(2, "0")}`;
+function formatTimeFromParts(hour: string, minute: string): string {
+  return `${hour}:${minute}`;
+}
+
+function getMinutesBetween(startTime: string, endTime: string): number {
+  const [startHours, startMins] = startTime.split(":").map(Number);
+  const [endHours, endMins] = endTime.split(":").map(Number);
+  return (endHours * 60 + endMins) - (startHours * 60 + startMins);
 }
 
 // Premium Dark Calendar Component
@@ -163,13 +162,17 @@ export default function AvailabilityPage() {
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
   const [availability, setAvailability] = useState<DayAvailability[]>([]);
+  const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const [newSlotTime, setNewSlotTime] = useState("09:00");
-  const [newSlotDuration, setNewSlotDuration] = useState(30);
+  const [startHour, setStartHour] = useState("09");
+  const [startMinute, setStartMinute] = useState("00");
+  const [endHour, setEndHour] = useState("10");
+  const [endMinute, setEndMinute] = useState("00");
+  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -180,10 +183,11 @@ export default function AvailabilityPage() {
   }, [authLoading, user, userData, router]);
 
   useEffect(() => {
-    const fetchAvailability = async () => {
+    const fetchData = async () => {
       if (!user) return;
 
       try {
+        // Fetch availability
         const availabilityRef = collection(db, "users", user.uid, "availability");
         const snapshot = await getDocs(availabilityRef);
         
@@ -193,15 +197,24 @@ export default function AvailabilityPage() {
         })) as DayAvailability[];
         
         setAvailability(availabilityData);
+
+        // Fetch event types
+        const eventTypesRef = collection(db, "users", user.uid, "eventTypes");
+        const eventTypesSnapshot = await getDocs(eventTypesRef);
+        const eventTypesData = eventTypesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as EventType[];
+        setEventTypes(eventTypesData.filter(e => e.title));
       } catch (error) {
-        console.error("Error fetching availability:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
     if (user && userData?.role === "INTERVIEWER") {
-      fetchAvailability();
+      fetchData();
     }
   }, [user, userData]);
 
@@ -214,14 +227,24 @@ export default function AvailabilityPage() {
   const addTimeSlot = async () => {
     if (!user || !selectedDate) return;
 
+    const newSlotStartTime = formatTimeFromParts(startHour, startMinute);
+    const newSlotEndTime = formatTimeFromParts(endHour, endMinute);
+
+    // Validate times
+    if (newSlotStartTime >= newSlotEndTime) {
+      alert("End time must be after start time!");
+      return;
+    }
+
     const dateStr = format(selectedDate, "yyyy-MM-dd");
-    const endTime = addMinutesToTime(newSlotTime, newSlotDuration);
+    const duration = getMinutesBetween(newSlotStartTime, newSlotEndTime);
     
     const newSlot: TimeSlot = {
       id: generateId(),
-      startTime: newSlotTime,
-      endTime,
-      duration: newSlotDuration,
+      startTime: newSlotStartTime,
+      endTime: newSlotEndTime,
+      duration,
+      eventTypeId: selectedEventTypeId || undefined,
     };
 
     const existingDay = availability.find((a) => a.date === dateStr);
@@ -229,9 +252,9 @@ export default function AvailabilityPage() {
     
     const hasOverlap = existingSlots.some((slot) => {
       return (
-        (newSlotTime >= slot.startTime && newSlotTime < slot.endTime) ||
-        (endTime > slot.startTime && endTime <= slot.endTime) ||
-        (newSlotTime <= slot.startTime && endTime >= slot.endTime)
+        (newSlotStartTime >= slot.startTime && newSlotStartTime < slot.endTime) ||
+        (newSlotEndTime > slot.startTime && newSlotEndTime <= slot.endTime) ||
+        (newSlotStartTime <= slot.startTime && newSlotEndTime >= slot.endTime)
       );
     });
 
@@ -324,7 +347,10 @@ export default function AvailabilityPage() {
 
   const datesWithAvailability = availability.map((a) => new Date(a.date));
   const selectedDayData = getSelectedDateAvailability();
-  const selectedDuration = DURATIONS.find((d) => d.value === newSlotDuration);
+  const selectedEventType = eventTypes.find((e) => e.id === selectedEventTypeId);
+  const newSlotStartTime = formatTimeFromParts(startHour, startMinute);
+  const newSlotEndTime = formatTimeFromParts(endHour, endMinute);
+  const calculatedDuration = getMinutesBetween(newSlotStartTime, newSlotEndTime);
 
   if (authLoading || loading) {
     return (
@@ -420,65 +446,125 @@ export default function AvailabilityPage() {
                       Add Time Slot
                     </h4>
                     
-                    {/* Time Selection */}
-                    <div>
-                      <label className="text-xs text-white/50 mb-3 block">Start Time</label>
-                      <div className="grid grid-cols-6 gap-2 max-h-36 overflow-y-auto pr-2 custom-scrollbar">
-                        {TIME_OPTIONS.map((time) => (
-                          <button
-                            key={time}
-                            onClick={() => setNewSlotTime(time)}
-                            className={cn(
-                              "px-2 py-2 text-xs rounded-lg font-medium transition-all duration-200",
-                              newSlotTime === time
-                                ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30"
-                                : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10"
-                            )}
+                    {/* Event Type Selection */}
+                    {eventTypes.length > 0 && (
+                      <div>
+                        <label className="text-xs text-white/50 mb-3 block">Event Type (Optional)</label>
+                        <div className="relative">
+                          <select
+                            value={selectedEventTypeId}
+                            onChange={(e) => setSelectedEventTypeId(e.target.value)}
+                            className="w-full h-11 rounded-xl bg-white/5 border border-white/10 px-4 pr-10 text-sm text-white focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none cursor-pointer"
                           >
-                            {time}
-                          </button>
-                        ))}
+                            <option value="" className="bg-[#0a0a0f]">No specific event type</option>
+                            {eventTypes.map((eventType) => (
+                              <option key={eventType.id} value={eventType.id} className="bg-[#0a0a0f]">
+                                {eventType.title}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+                        </div>
+                        {eventTypes.length === 0 && (
+                          <Link href="/events" className="text-xs text-violet-400 hover:text-violet-300 mt-2 inline-block">
+                            Create event types →
+                          </Link>
+                        )}
                       </div>
-                    </div>
-
-                    {/* Duration Selection */}
-                    <div>
-                      <label className="text-xs text-white/50 mb-3 block">Duration</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {DURATIONS.map((dur) => (
-                          <button
-                            key={dur.value}
-                            onClick={() => setNewSlotDuration(dur.value)}
-                            className={cn(
-                              "px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200",
-                              newSlotDuration === dur.value
-                                ? `bg-gradient-to-r ${dur.color} text-white shadow-lg`
-                                : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10"
-                            )}
-                          >
-                            {dur.label}
-                          </button>
-                        ))}
+                    )}
+                    
+                    {/* Time Selection - Start & End */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-white/50 mb-3 block">Start Time</label>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <select
+                              value={startHour}
+                              onChange={(e) => setStartHour(e.target.value)}
+                              className="w-full h-11 rounded-xl bg-white/5 border border-white/10 px-3 pr-8 text-sm text-white focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none cursor-pointer text-center"
+                            >
+                              {HOURS.map((hour) => (
+                                <option key={hour} value={hour} className="bg-[#0a0a0f]">
+                                  {hour}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/40 pointer-events-none" />
+                          </div>
+                          <span className="text-white/50 text-lg font-bold">:</span>
+                          <div className="relative flex-1">
+                            <select
+                              value={startMinute}
+                              onChange={(e) => setStartMinute(e.target.value)}
+                              className="w-full h-11 rounded-xl bg-white/5 border border-white/10 px-3 pr-8 text-sm text-white focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none cursor-pointer text-center"
+                            >
+                              {MINUTES.map((minute) => (
+                                <option key={minute} value={minute} className="bg-[#0a0a0f]">
+                                  {minute}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/40 pointer-events-none" />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs text-white/50 mb-3 block">End Time</label>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <select
+                              value={endHour}
+                              onChange={(e) => setEndHour(e.target.value)}
+                              className="w-full h-11 rounded-xl bg-white/5 border border-white/10 px-3 pr-8 text-sm text-white focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none cursor-pointer text-center"
+                            >
+                              {HOURS.map((hour) => (
+                                <option key={hour} value={hour} className="bg-[#0a0a0f]">
+                                  {hour}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/40 pointer-events-none" />
+                          </div>
+                          <span className="text-white/50 text-lg font-bold">:</span>
+                          <div className="relative flex-1">
+                            <select
+                              value={endMinute}
+                              onChange={(e) => setEndMinute(e.target.value)}
+                              className="w-full h-11 rounded-xl bg-white/5 border border-white/10 px-3 pr-8 text-sm text-white focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none cursor-pointer text-center"
+                            >
+                              {MINUTES.map((minute) => (
+                                <option key={minute} value={minute} className="bg-[#0a0a0f]">
+                                  {minute}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/40 pointer-events-none" />
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Preview & Add */}
                     <div className="flex items-center justify-between pt-3 border-t border-white/10">
                       <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "w-2 h-8 rounded-full bg-gradient-to-b",
-                          selectedDuration?.color || "from-violet-500 to-fuchsia-500"
-                        )} />
+                        <div 
+                          className="w-2 h-8 rounded-full"
+                          style={{ backgroundColor: selectedEventType?.color || "#8b5cf6" }}
+                        />
                         <div>
                           <p className="text-white font-semibold">
-                            {newSlotTime} → {addMinutesToTime(newSlotTime, newSlotDuration)}
+                            {newSlotStartTime} → {newSlotEndTime}
                           </p>
-                          <p className="text-xs text-white/40">{newSlotDuration} minutes</p>
+                          <p className="text-xs text-white/40">
+                            {calculatedDuration > 0 ? `${calculatedDuration} minutes` : "Invalid time range"}
+                            {selectedEventType && ` • ${selectedEventType.title}`}
+                          </p>
                         </div>
                       </div>
                       <button
                         onClick={addTimeSlot}
-                        disabled={saving}
+                        disabled={saving || calculatedDuration <= 0}
                         className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-sm hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-200 flex items-center gap-2 disabled:opacity-50"
                       >
                         <Plus className="w-4 h-4" />
@@ -512,27 +598,34 @@ export default function AvailabilityPage() {
                     ) : (
                       <div className="space-y-3">
                         {selectedDayData.slots.map((slot) => {
-                          const duration = DURATIONS.find((d) => d.value === slot.duration);
+                          const slotEventType = slot.eventTypeId ? eventTypes.find((e) => e.id === slot.eventTypeId) : null;
                           return (
                             <div
                               key={slot.id}
                               className="group flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200"
                             >
                               <div className="flex items-center gap-4">
-                                <div className={cn(
-                                  "w-1.5 h-12 rounded-full bg-gradient-to-b",
-                                  duration?.color || "from-violet-500 to-fuchsia-500"
-                                )} />
+                                <div 
+                                  className="w-1.5 h-12 rounded-full"
+                                  style={{ backgroundColor: slotEventType?.color || "#8b5cf6" }}
+                                />
                                 <div>
                                   <p className="text-white font-semibold text-lg">
                                     {slot.startTime} - {slot.endTime}
                                   </p>
-                                  <span className={cn(
-                                    "inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-gradient-to-r text-white mt-1",
-                                    duration?.color || "from-violet-500 to-fuchsia-500"
-                                  )}>
-                                    {slot.duration} min
-                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-white/10 text-white/70">
+                                      {slot.duration} min
+                                    </span>
+                                    {slotEventType && (
+                                      <span 
+                                        className="inline-block px-2 py-0.5 rounded-md text-xs font-medium text-white"
+                                        style={{ backgroundColor: `${slotEventType.color}40` }}
+                                      >
+                                        {slotEventType.title}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               <button
