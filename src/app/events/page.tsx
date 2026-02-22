@@ -16,6 +16,8 @@ import {
   Sparkles,
   FileText,
   Palette,
+  ArrowRight,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -63,6 +65,9 @@ export default function EventsPage() {
   const [saved, setSaved] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
+  const [showAvailabilityPrompt, setShowAvailabilityPrompt] = useState(false);
+  const [lastCreatedEventId, setLastCreatedEventId] = useState<string>("");
+  const [lastCreatedEventTitle, setLastCreatedEventTitle] = useState<string>("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -144,7 +149,9 @@ export default function EventsPage() {
 
       await setDoc(doc(db, "users", user.uid, "eventTypes", eventId), eventData);
 
-      if (editingEvent) {
+      const isEditing = !!editingEvent;
+
+      if (isEditing) {
         setEventTypes((prev) =>
           prev.map((e) => (e.id === eventId ? { id: eventId, ...eventData } : e))
         );
@@ -155,6 +162,13 @@ export default function EventsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       resetForm();
+
+      // Show availability prompt only for new events
+      if (!isEditing) {
+        setLastCreatedEventId(eventId);
+        setLastCreatedEventTitle(eventData.title);
+        setShowAvailabilityPrompt(true);
+      }
     } catch (error) {
       console.error("Error saving event type:", error);
     } finally {
@@ -411,6 +425,49 @@ export default function EventsPage() {
           </div>
         </div>
       </div>
+
+      {/* Availability Prompt Modal */}
+      {showAvailabilityPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowAvailabilityPrompt(false)}
+          />
+          <div className="relative w-full max-w-md rounded-2xl sm:rounded-3xl bg-[#0a0a12] border border-white/10 shadow-2xl shadow-violet-500/10 p-6 sm:p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-500/30">
+              <CalendarClock className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
+              Event Created! 🎉
+            </h3>
+            <p className="text-sm sm:text-base text-white/50 mb-6">
+              Now fix your availability schedule for{" "}
+              <span className="text-white font-semibold">&quot;{lastCreatedEventTitle}&quot;</span>{" "}
+              so applicants can book their slots.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setShowAvailabilityPrompt(false);
+                  router.push(`/availability?eventId=${lastCreatedEventId}`);
+                }}
+                className="w-full px-5 py-3.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-200"
+              >
+                <CalendarClock className="w-4 h-4" />
+                Set Availability Schedule
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowAvailabilityPrompt(false)}
+                className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 font-medium text-sm hover:bg-white/10 hover:text-white transition-all"
+              >
+                I&apos;ll do it later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

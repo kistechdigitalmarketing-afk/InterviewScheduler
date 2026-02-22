@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { doc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -158,9 +158,11 @@ function DarkCalendar({
   );
 }
 
-export default function AvailabilityPage() {
+function AvailabilityContent() {
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedEventId = searchParams.get("eventId") || "";
   const [availability, setAvailability] = useState<DayAvailability[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +174,17 @@ export default function AvailabilityPage() {
   const [startMinute, setStartMinute] = useState("00");
   const [endHour, setEndHour] = useState("10");
   const [endMinute, setEndMinute] = useState("00");
-  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>("");
+  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>(preselectedEventId);
+
+  // Pre-select event type from URL query param after event types load
+  useEffect(() => {
+    if (preselectedEventId && eventTypes.length > 0) {
+      const exists = eventTypes.find((e) => e.id === preselectedEventId);
+      if (exists) {
+        setSelectedEventTypeId(preselectedEventId);
+      }
+    }
+  }, [preselectedEventId, eventTypes]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -348,6 +360,7 @@ export default function AvailabilityPage() {
   const datesWithAvailability = availability.map((a) => new Date(a.date));
   const selectedDayData = getSelectedDateAvailability();
   const selectedEventType = eventTypes.find((e) => e.id === selectedEventTypeId);
+  const preselectedEventType = eventTypes.find((e) => e.id === preselectedEventId);
   const newSlotStartTime = formatTimeFromParts(startHour, startMinute);
   const newSlotEndTime = formatTimeFromParts(endHour, endMinute);
   const calculatedDuration = getMinutesBetween(newSlotStartTime, newSlotEndTime);
@@ -378,6 +391,23 @@ export default function AvailabilityPage() {
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-20 sm:pt-24">
+        {/* Contextual Banner for Event Flow */}
+        {preselectedEventType && (
+          <div className="mb-6 rounded-2xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 p-4 sm:p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
+              <CalendarDays className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-sm sm:text-base text-white font-semibold">
+                Set availability for &quot;{preselectedEventType.title}&quot;
+              </p>
+              <p className="text-xs sm:text-sm text-white/50">
+                Select dates on the calendar and add time slots for this event type.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-6 sm:mb-12">
           <div className="flex items-center gap-3 mb-4">
@@ -389,7 +419,6 @@ export default function AvailabilityPage() {
               <p className="text-sm sm:text-base text-white/50">Configure your schedule</p>
             </div>
           </div>
-          
         </div>
 
         <div className="grid lg:grid-cols-2 gap-4 sm:gap-8">
@@ -664,5 +693,19 @@ export default function AvailabilityPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function AvailabilityPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#050507] flex items-center justify-center">
+          <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <AvailabilityContent />
+    </Suspense>
   );
 }
