@@ -19,7 +19,6 @@ import {
   ExternalLink,
   AlertTriangle,
   XCircle,
-  FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -206,6 +205,7 @@ export default function BookingPage({
     notes: "",
   });
   const [availability, setAvailability] = useState<DayAvailability[]>([]);
+  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -295,7 +295,12 @@ export default function BookingPage({
         const now = new Date();
         const availableSlots: TimeSlot[] = [];
 
-        for (const slot of dayAvailability.slots) {
+        // Filter slots by selected event type
+        const filteredDaySlots = selectedEventTypeId
+          ? dayAvailability.slots.filter((slot) => slot.eventTypeId === selectedEventTypeId)
+          : dayAvailability.slots;
+
+        for (const slot of filteredDaySlots) {
           // Use the slot's duration or default to INTERVIEW_DURATION
           const slotDuration = slot.duration || INTERVIEW_DURATION;
           
@@ -334,7 +339,7 @@ export default function BookingPage({
     };
 
     fetchSlots();
-  }, [selectedDate, interviewerId, availability]);
+  }, [selectedDate, interviewerId, availability, selectedEventTypeId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -418,7 +423,13 @@ export default function BookingPage({
     }
   };
 
-  const availableDates = availability.map((a) => new Date(a.date));
+  // Filter available dates based on selected event type
+  const availableDates = availability
+    .filter((a) => {
+      if (!selectedEventTypeId) return true;
+      return a.slots.some((slot) => slot.eventTypeId === selectedEventTypeId);
+    })
+    .map((a) => new Date(a.date));
 
   // Get selected slot duration for display
   const getSelectedSlotDuration = () => {
@@ -644,65 +655,64 @@ export default function BookingPage({
         </button>
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
-          {/* Sidebar - Interviewer Info */}
+          {/* Sidebar - Interviewer Info & Event Details */}
           <div className="lg:col-span-1 order-2 lg:order-1">
-            <div className="lg:sticky lg:top-24 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 sm:p-6">
-              <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <Avatar className="h-10 w-10 sm:h-14 sm:w-14 ring-2 ring-white/10">
-                  <AvatarImage src={interviewer.image || ""} />
-                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-sm sm:text-lg">
-                    {(interviewer.name || interviewer.email).charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="font-semibold text-white text-sm sm:text-base truncate">
-                    {interviewer.name || interviewer.email}
-                  </p>
-                  <p className="text-xs sm:text-sm text-white/40">Interviewer</p>
-                </div>
-              </div>
-
-              <div className="w-full h-1 sm:h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 mb-4 sm:mb-5" />
-
-              <h2 className="text-lg sm:text-2xl font-bold text-white mb-1 sm:mb-2">Interview Session</h2>
-              <p className="text-white/40 text-xs sm:text-sm mb-4 sm:mb-5">
-                Book a time slot for your interview
-              </p>
-
-              {/* Event Types Available */}
-              {eventTypes.length > 0 && (
-                <div className="mb-4 sm:mb-5">
-                  <p className="text-xs font-medium text-white/50 mb-2">Available Session Types</p>
-                  <div className="space-y-2">
-                    {eventTypes.map((eventType) => (
-                      <div
-                        key={eventType.id}
-                        className="p-3 rounded-lg bg-white/5 border border-white/10"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: eventType.color || "#6366f1" }}
-                          />
-                          <span className="text-sm font-medium text-white">{eventType.title}</span>
-                        </div>
-                        {eventType.description && (
-                          <p className="text-xs text-white/40 ml-4">{eventType.description}</p>
-                        )}
-                      </div>
-                    ))}
+            <div className="lg:sticky lg:top-24 space-y-4">
+              {/* Interviewer Card */}
+              <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 sm:p-6">
+                <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <Avatar className="h-10 w-10 sm:h-14 sm:w-14 ring-2 ring-white/10">
+                    <AvatarImage src={interviewer.image || ""} />
+                    <AvatarFallback className="bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-sm sm:text-lg">
+                      {(interviewer.name || interviewer.email).charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-white text-sm sm:text-base truncate">
+                      {interviewer.name || interviewer.email}
+                    </p>
+                    <p className="text-xs sm:text-sm text-white/40">Interviewer</p>
                   </div>
                 </div>
-              )}
 
+                <div className="w-full h-1 sm:h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 mb-4 sm:mb-5" />
+
+                <h2 className="text-lg sm:text-2xl font-bold text-white mb-1 sm:mb-2">Interview Session</h2>
+                <p className="text-white/40 text-xs sm:text-sm">
+                  Book a time slot for your interview
+                </p>
+              </div>
+
+              {/* Selected Event Type Details */}
+              {selectedEventTypeId && (() => {
+                const et = eventTypes.find(e => e.id === selectedEventTypeId);
+                if (!et) return null;
+                return (
+                  <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 sm:p-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: et.color || "#6366f1" }}
+                      />
+                      <p className="text-xs font-medium text-white/50 uppercase tracking-wider">Selected Event</p>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-2">{et.title}</h3>
+                    {et.description && (
+                      <p className="text-xs sm:text-sm text-white/50 leading-relaxed">{et.description}</p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Selected Time Summary */}
               {selectedDate && selectedTime && selectedSlotData && (
-                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
+                <div className="rounded-2xl sm:rounded-3xl bg-violet-500/10 border border-violet-500/30 backdrop-blur-xl p-4 sm:p-6">
                   <p className="text-xs sm:text-sm font-medium text-white/50 mb-2 sm:mb-3">
                     Selected Time
                   </p>
-                  <div className="rounded-lg sm:rounded-xl bg-violet-500/20 border border-violet-500/30 p-3 sm:p-4">
+                  <div className="space-y-2">
                     {getSelectedEventType() && (
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2">
                         <div
                           className="w-2 h-2 rounded-full"
                           style={{ backgroundColor: getSelectedEventType()?.color || "#6366f1" }}
@@ -719,7 +729,7 @@ export default function BookingPage({
                       {format(new Date(selectedTime), "h:mm a")} -{" "}
                       {format(addMinutes(new Date(selectedTime), getSelectedSlotDuration()), "h:mm a")}
                     </p>
-                    <p className="text-[10px] sm:text-xs text-violet-400/70 mt-1">
+                    <p className="text-[10px] sm:text-xs text-violet-400/70">
                       {getSelectedSlotDuration()} minutes
                     </p>
                   </div>
@@ -729,13 +739,66 @@ export default function BookingPage({
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            {step === "date" ? (
+          <div className="lg:col-span-2 order-1 lg:order-2 space-y-4 sm:space-y-6">
+            {/* Event Type Selection */}
+            {eventTypes.length > 0 && (
               <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
+                <div className="p-4 sm:p-6 border-b border-white/10">
+                  <h2 className="text-lg sm:text-xl font-bold text-white">Select Session Type</h2>
+                  <p className="text-white/40 text-xs sm:text-sm mt-1">
+                    Choose the type of interview you&apos;d like to book
+                  </p>
+                </div>
+                <div className="p-4 sm:p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {eventTypes.map((eventType) => (
+                      <button
+                        key={eventType.id}
+                        onClick={() => {
+                          setSelectedEventTypeId(eventType.id);
+                          setSelectedDate(undefined);
+                          setSelectedTime(undefined);
+                          setSelectedSlotData(null);
+                        }}
+                        className={cn(
+                          "p-4 rounded-xl border-2 text-left transition-all duration-200",
+                          selectedEventTypeId === eventType.id
+                            ? "border-violet-500 bg-violet-500/10"
+                            : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]"
+                        )}
+                      >
+                        <div className="flex items-center gap-2.5 mb-1.5">
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: eventType.color || "#6366f1" }}
+                          />
+                          <span className="text-sm sm:text-base font-semibold text-white">
+                            {eventType.title}
+                          </span>
+                        </div>
+                        {eventType.description && (
+                          <p className="text-xs sm:text-sm text-white/40 line-clamp-2 ml-[22px]">
+                            {eventType.description}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step === "date" ? (
+              <div className={cn(
+                "rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden transition-opacity duration-200",
+                eventTypes.length > 0 && !selectedEventTypeId && "opacity-50 pointer-events-none"
+              )}>
                 <div className="p-4 sm:p-6 border-b border-white/10">
                   <h2 className="text-lg sm:text-xl font-bold text-white">Select a Date & Time</h2>
                   <p className="text-white/40 text-xs sm:text-sm mt-1">
-                    Green dates have available slots
+                    {eventTypes.length > 0 && !selectedEventTypeId
+                      ? "Please select a session type first"
+                      : "Green dates have available slots"}
                   </p>
                 </div>
                 <div className="p-4 sm:p-6">
@@ -765,27 +828,24 @@ export default function BookingPage({
                             </div>
                           ) : (
                             <div className="grid grid-cols-2 gap-2 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-2">
-                              {slots.map((slot) => {
-                                const slotEventType = slot.eventTypeId ? eventTypes.find(e => e.id === slot.eventTypeId) : null;
-                                return (
-                                  <button
-                                    key={slot.time}
-                                    onClick={() => {
-                                      setSelectedTime(slot.time);
-                                      setSelectedSlotData(slot);
-                                    }}
-                                    className={cn(
-                                      "px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 text-left",
-                                      selectedTime === slot.time
-                                        ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30"
-                                        : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
-                                    )}
-                                  >
-                                    <span className="block">{slot.formatted}</span>
-                                    <span className="text-[10px] opacity-70">{slot.duration} min</span>
-                                  </button>
-                                );
-                              })}
+                              {slots.map((slot) => (
+                                <button
+                                  key={slot.time}
+                                  onClick={() => {
+                                    setSelectedTime(slot.time);
+                                    setSelectedSlotData(slot);
+                                  }}
+                                  className={cn(
+                                    "px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 text-left",
+                                    selectedTime === slot.time
+                                      ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30"
+                                      : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
+                                  )}
+                                >
+                                  <span className="block">{slot.formatted}</span>
+                                  <span className="text-[10px] opacity-70">{slot.duration} min</span>
+                                </button>
+                              ))}
                             </div>
                           )}
                         </>
