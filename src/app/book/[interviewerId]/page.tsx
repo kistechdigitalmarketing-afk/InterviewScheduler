@@ -15,6 +15,8 @@ import {
   ArrowRight,
   CheckCircle2,
   Loader2,
+  Video,
+  ExternalLink,
   AlertTriangle,
   XCircle,
 } from "lucide-react";
@@ -57,6 +59,15 @@ interface AvailabilitySlot {
 interface DayAvailability {
   date: string;
   slots: AvailabilitySlot[];
+}
+
+interface Booking {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  interviewerName: string | null;
+  interviewerEmail: string;
+  meetingLink: string | null;
 }
 
 // Dark Calendar Component
@@ -183,7 +194,8 @@ export default function BookingPage({
   const [selectedSlotData, setSelectedSlotData] = useState<TimeSlot | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [step, setStep] = useState<"date" | "details" | "has-booking">("date");
+  const [step, setStep] = useState<"date" | "details" | "confirmed" | "has-booking">("date");
+  const [booking, setBooking] = useState<Booking | null>(null);
   const [existingBooking, setExistingBooking] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -394,23 +406,15 @@ export default function BookingPage({
 
       const docRef = await addDoc(collection(db, "bookings"), bookingData);
 
-      // Auto-sync to interviewer's Google Calendar if connected
-      try {
-        await fetch('/api/google/sync-booking', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            bookingId: docRef.id, 
-            interviewerId 
-          }),
-        });
-      } catch (syncError) {
-        // Don't fail the booking if sync fails
-        console.error("Error syncing to interviewer calendar:", syncError);
-      }
-
-      // Redirect to success page with booking ID
-      router.push(`/booking/success?bookingId=${docRef.id}`);
+      setBooking({
+        id: docRef.id,
+        startTime,
+        endTime,
+        interviewerName: interviewer.name,
+        interviewerEmail: interviewer.email,
+        meetingLink: eventType?.meetingLink || null,
+      });
+      setStep("confirmed");
     } catch (error) {
       console.error("Error creating booking:", error);
       alert("Something went wrong. Please try again.");
@@ -544,6 +548,83 @@ export default function BookingPage({
               Go to Dashboard
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Confirmed step
+  if (step === "confirmed" && booking) {
+    return (
+      <div className="min-h-screen bg-[#050507] flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent" />
+        
+        <div className="relative rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-6 sm:p-12 text-center max-w-lg w-full">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-2xl shadow-emerald-500/30">
+            <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">Interview Scheduled!</h2>
+          <p className="text-sm sm:text-base text-white/50 mb-6 sm:mb-8">
+            Your interview has been confirmed
+          </p>
+
+          <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-6 text-left space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="font-semibold text-white text-sm sm:text-base">Interview</p>
+                <p className="text-xs sm:text-sm text-white/50 truncate">
+                  {format(booking.startTime, "EEE, MMM d, yyyy")}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
+              <p className="text-sm sm:text-base text-white/70">
+                {format(booking.startTime, "h:mm a")} - {format(booking.endTime, "h:mm a")}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
+              <p className="text-sm sm:text-base text-white/70 truncate">
+                {booking.interviewerName || booking.interviewerEmail}
+              </p>
+            </div>
+          </div>
+
+          {booking.meetingLink ? (
+            <div className="w-full rounded-xl sm:rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 sm:p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <Video className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm sm:text-base font-medium text-white mb-1">Meeting Link</p>
+                  <p className="text-xs sm:text-sm text-white/50">
+                    Please use the link below to join your interview at the scheduled time.
+                  </p>
+                </div>
+              </div>
+              <a
+                href={booking.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-all truncate text-center"
+              >
+                {booking.meetingLink}
+              </a>
+            </div>
+          ) : (
+            <div className="w-full rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm sm:text-base font-medium text-white mb-1">Meeting Details Pending</p>
+                  <p className="text-xs sm:text-sm text-white/50">
+                    The meeting link and additional details will be communicated to you via email within 1-2 business days. Please ensure your contact information is correct.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
