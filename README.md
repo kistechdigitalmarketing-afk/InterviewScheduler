@@ -14,6 +14,11 @@ A  interview scheduling application built with Next.js 15 and Firebase, where bo
 - **Easy Booking**: Select a date and time slot that works for you
 - **Instant Confirmation**: Receive immediate booking confirmation with meeting details
 
+### Email Notifications
+- **Confirmation Emails**: Both interviewer and applicant receive confirmation emails when a booking is made
+- **Calendar Attachment**: .ics file attached to easily add the interview to any calendar app
+- **Meeting Links**: Direct access to video meeting links in all emails
+
 
 
 ## Getting Started
@@ -56,6 +61,11 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+
+# Brevo Email (for notifications)
+BREVO_API_KEY=your-brevo-api-key
+SENDER_EMAIL=noreply@yourdomain.com
+SENDER_NAME=Interview Scheduler
 ```
 
 4. Start the development server:
@@ -129,6 +139,21 @@ src/
 ├── lib/
 │   ├── firebase.ts         # Firebase client config
 │   ├── firebase-admin.ts   # Firebase admin config
+│   ├── sendBookingEmail.ts # Email utility (Brevo + .ics)
 │   └── utils.ts            # Utility functions
 ```
 
+## Email Notifications Setup
+
+This app uses [Brevo](https://brevo.com) (formerly Sendinblue) for email notifications with .ics calendar attachments.
+
+### Setup Steps:
+1. Sign up at [brevo.com](https://brevo.com) (free tier: 300 emails/day)
+2. Go to SMTP & API → API Keys → Generate a new API key
+3. Add `BREVO_API_KEY` to your environment variables
+4. Set `SENDER_EMAIL` and `SENDER_NAME` for the "from" field
+
+### Features:
+- **Confirmation emails** sent to both parties when booking is created
+- **.ics calendar attachment** for easy calendar integration
+- Clean, professional email templates

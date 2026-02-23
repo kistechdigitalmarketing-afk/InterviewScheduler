@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { format, isPast, isToday, isFuture } from "date-fns";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
   Calendar,
@@ -21,6 +21,7 @@ import {
   Check,
   CalendarDays,
   Settings,
+  CalendarPlus,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -42,12 +43,48 @@ interface Booking {
   interviewerEmail: string;
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { user, userData, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const synced = searchParams.get("synced") === "true";
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [calendarSynced, setCalendarSynced] = useState(false);
+  const [calendarConnected, setCalendarConnected] = useState(false);
+
+  // Show synced notification and check calendar connection
+  useEffect(() => {
+    if (synced) {
+      setCalendarSynced(true);
+      setCalendarConnected(true);
+      // Remove the query param from URL after showing
+      const timeout = setTimeout(() => {
+        router.replace("/dashboard");
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [synced, router]);
+
+  // Check if Google Calendar is connected
+  useEffect(() => {
+    const checkCalendarConnection = async () => {
+      if (!user) return;
+      
+      try {
+        const tokenRef = doc(db, 'users', user.uid, 'googleCalendar', 'credentials');
+        const tokenDoc = await getDoc(tokenRef);
+        if (tokenDoc.exists() && tokenDoc.data()?.connected) {
+          setCalendarConnected(true);
+        }
+      } catch (error) {
+        console.error('Error checking calendar connection:', error);
+      }
+    };
+
+    checkCalendarConnection();
+  }, [user]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -177,6 +214,14 @@ export default function DashboardPage() {
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-20 sm:pt-24">
+        {/* Calendar Synced Notification */}
+        {calendarSynced && (
+          <div className="mb-6 rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+            <span className="text-emerald-400 font-medium">✓ Connected to Google Calendar</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-6 sm:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
@@ -196,12 +241,29 @@ export default function DashboardPage() {
               </div>
             </div>
             {isInterviewer && (
-              <Link href="/availability">
-                <button className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-sm flex items-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all">
-                  <Plus className="w-4 h-4" />
-                  Add Your Schedule
-                </button>
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                {calendarConnected ? (
+                  <div className="px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium text-sm flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Google Calendar Connected
+                  </div>
+                ) : (
+                  <a
+                    href={`/api/google/interviewer-auth?interviewerId=${user?.uid}`}
+                    className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-all"
+                    style={{ backgroundColor: "#4285F4" }}
+                  >
+                    <CalendarPlus className="w-4 h-4" />
+                    Connect Google Calendar
+                  </a>
+                )}
+                <Link href="/availability">
+                  <button className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-sm flex items-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all">
+                    <Plus className="w-4 h-4" />
+                    Add Your Schedule
+                  </button>
+                </Link>
+              </div>
             )}
           </div>
         </div>
@@ -461,5 +523,19 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#050507] flex items-center justify-center">
+          <div className="w-10 h-10 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
