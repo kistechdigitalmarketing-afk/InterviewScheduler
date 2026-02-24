@@ -483,7 +483,7 @@ export default function BookingPage({
       setSelectedDate(undefined);
       setSelectedTime(undefined);
       setSelectedSlotData(null);
-      setFormData({ name: "", email: "", phoneNumber: "", notes: "" });
+      setFormData({ name: "", email: "", phone: "", notes: "" });
       setStep("date");
     } catch (error) {
       console.error("Error cancelling booking:", error);
