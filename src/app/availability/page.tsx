@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 interface EventType {
   id: string;
   title: string;
+  slug: string;
   description: string;
   color: string;
   meetingLink?: string;
