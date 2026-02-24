@@ -20,6 +20,8 @@ import {
   CalendarClock,
   Video,
   Link as LinkIcon,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +62,7 @@ function generateId() {
 }
 
 export default function EventsPage() {
-  const { user, userData, loading: authLoading } = useAuth();
+  const { userData, loading: authLoading, organizationId, initOrganization } = useAuth();
   const router = useRouter();
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +73,7 @@ export default function EventsPage() {
   const [showAvailabilityPrompt, setShowAvailabilityPrompt] = useState(false);
   const [lastCreatedEventId, setLastCreatedEventId] = useState<string>("");
   const [lastCreatedEventTitle, setLastCreatedEventTitle] = useState<string>("");
+  const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -79,20 +82,19 @@ export default function EventsPage() {
     meetingLink: "",
   });
 
+  // Initialize organization on load
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
-    } else if (!authLoading && userData?.role !== "INTERVIEWER") {
-      router.push("/dashboard");
+    if (!userData && !authLoading) {
+      initOrganization();
     }
-  }, [authLoading, user, userData, router]);
+  }, [userData, authLoading, initOrganization]);
 
   useEffect(() => {
     const fetchEventTypes = async () => {
-      if (!user) return;
+      if (!organizationId) return;
 
       try {
-        const eventTypesRef = collection(db, "users", user.uid, "eventTypes");
+        const eventTypesRef = collection(db, "users", organizationId, "eventTypes");
         const snapshot = await getDocs(eventTypesRef);
 
         const eventTypesData = snapshot.docs.map((doc) => ({
@@ -108,10 +110,10 @@ export default function EventsPage() {
       }
     };
 
-    if (user && userData?.role === "INTERVIEWER") {
+    if (organizationId) {
       fetchEventTypes();
     }
-  }, [user, userData]);
+  }, [organizationId, userData]);
 
   const resetForm = () => {
     setFormData({
@@ -137,7 +139,7 @@ export default function EventsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !formData.title.trim()) return;
+    if (!organizationId || !formData.title.trim()) return;
 
     setSaving(true);
 
@@ -154,7 +156,7 @@ export default function EventsPage() {
         isActive: true,
       };
 
-      await setDoc(doc(db, "users", user.uid, "eventTypes", eventId), eventData);
+      await setDoc(doc(db, "users", organizationId, "eventTypes", eventId), eventData);
 
       const isEditing = !!editingEvent;
 
@@ -184,13 +186,13 @@ export default function EventsPage() {
   };
 
   const handleDelete = async (eventId: string) => {
-    if (!user) return;
+    if (!organizationId) return;
     if (!confirm("Are you sure you want to delete this event type?")) return;
 
     setSaving(true);
 
     try {
-      await deleteDoc(doc(db, "users", user.uid, "eventTypes", eventId));
+      await deleteDoc(doc(db, "users", organizationId, "eventTypes", eventId));
       setEventTypes((prev) => prev.filter((e) => e.id !== eventId));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -201,6 +203,14 @@ export default function EventsPage() {
     }
   };
 
+  const copyEventBookingLink = (eventType: EventType) => {
+    if (!organizationId) return;
+    const link = `${window.location.origin}/book/${organizationId}/${eventType.slug}`;
+    navigator.clipboard.writeText(link);
+    setCopiedEventId(eventType.id);
+    setTimeout(() => setCopiedEventId(null), 2000);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-[#050507] flex items-center justify-center">
@@ -209,7 +219,7 @@ export default function EventsPage() {
     );
   }
 
-  if (!user || userData?.role !== "INTERVIEWER") return null;
+  if (!organizationId) return null;
 
   return (
     <div className="min-h-screen bg-[#050507] relative overflow-hidden">
@@ -226,7 +236,7 @@ export default function EventsPage() {
         }}
       />
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-20 sm:pt-24">
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-24 sm:pt-28">
         {/* Header */}
         <div className="mb-6 sm:mb-12">
           <div className="flex items-center gap-3 mb-4">
@@ -409,49 +419,79 @@ export default function EventsPage() {
                 {eventTypes.map((eventType) => (
                   <div
                     key={eventType.id}
-                    className="group flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200"
+                    className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-200"
                   >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className="w-3 h-12 rounded-full"
-                        style={{ backgroundColor: eventType.color }}
-                      />
-                      <div>
-                        <h3 className="font-semibold text-white text-lg">
-                          {eventType.title}
-                        </h3>
-                        {eventType.description && (
-                          <p className="text-white/40 text-sm mt-0.5 line-clamp-1">
-                            {eventType.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-3 mt-2 flex-wrap">
-                          <span className="text-xs text-white/40">
-                            /{eventType.slug}
-                          </span>
-                          {eventType.meetingLink && (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-400/70">
-                              <Video className="w-3 h-3" />
-                              Link added
-                            </span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-3 h-12 rounded-full"
+                          style={{ backgroundColor: eventType.color }}
+                        />
+                        <div>
+                          <h3 className="font-semibold text-white text-lg">
+                            {eventType.title}
+                          </h3>
+                          {eventType.description && (
+                            <p className="text-white/40 text-sm mt-0.5 line-clamp-1">
+                              {eventType.description}
+                            </p>
                           )}
+                          <div className="flex items-center gap-3 mt-2 flex-wrap">
+                            <span className="text-xs text-white/40">
+                              /{eventType.slug}
+                            </span>
+                            {eventType.meetingLink && (
+                              <span className="inline-flex items-center gap-1 text-xs text-emerald-400/70">
+                                <Video className="w-3 h-3" />
+                                Link added
+                              </span>
+                            )}
+                          </div>
                         </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          onClick={() => handleEdit(eventType)}
+                          className="px-3 py-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white text-sm font-medium transition-all"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(eventType.id)}
+                          className="w-9 h-9 rounded-lg bg-white/5 text-white/40 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                      <button
-                        onClick={() => handleEdit(eventType)}
-                        className="px-3 py-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white text-sm font-medium transition-all"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(eventType.id)}
-                        className="w-9 h-9 rounded-lg bg-white/5 text-white/40 hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    {/* Booking Link Section */}
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-white/40 mb-1">Booking Link</p>
+                          <p className="text-xs sm:text-sm text-white/60 truncate">
+                            {typeof window !== "undefined" ? window.location.origin : ""}/book/{organizationId}/{eventType.slug}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => copyEventBookingLink(eventType)}
+                          className="px-3 py-2 rounded-lg bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 text-sm font-medium flex items-center gap-2 transition-all flex-shrink-0"
+                        >
+                          {copiedEventId === eventType.id ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4" />
+                              Copy Link
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

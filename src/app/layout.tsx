@@ -18,7 +18,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background antialiased">
         <Providers>
           <Navbar />
-          <main className="pt-16">{children}</main>
+          <main>{children}</main>
         </Providers>
       </body>
     </html>

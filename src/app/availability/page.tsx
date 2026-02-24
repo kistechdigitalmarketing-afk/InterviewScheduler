@@ -4,10 +4,10 @@ import { Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { doc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
+import { doc, setDoc, collection, getDocs, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { format, isSameDay } from "date-fns";
-import { Clock, Loader2, Check, Plus, X, Trash2, CalendarDays, Sparkles, ChevronDown } from "lucide-react";
+import { Clock, Loader2, Check, Plus, X, Trash2, CalendarDays, Sparkles, ChevronDown, Building2, Copy, CheckCircle2, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EventType {
@@ -160,7 +160,7 @@ function DarkCalendar({
 }
 
 function AvailabilityContent() {
-  const { user, userData, loading: authLoading } = useAuth();
+  const { userData, loading: authLoading, organizationId, initOrganization } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedEventId = searchParams.get("eventId") || "";
@@ -176,6 +176,17 @@ function AvailabilityContent() {
   const [endHour, setEndHour] = useState("10");
   const [endMinute, setEndMinute] = useState("00");
   const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>(preselectedEventId);
+  const [organizationName, setOrganizationName] = useState<string>("");
+  const [savingOrg, setSavingOrg] = useState(false);
+  const [showCompletedPopup, setShowCompletedPopup] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Initialize organization on load
+  useEffect(() => {
+    if (!userData && !authLoading) {
+      initOrganization();
+    }
+  }, [userData, authLoading, initOrganization]);
 
   // Pre-select event type from URL query param after event types load
   useEffect(() => {
@@ -188,20 +199,12 @@ function AvailabilityContent() {
   }, [preselectedEventId, eventTypes]);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
-    } else if (!authLoading && userData?.role !== "INTERVIEWER") {
-      router.push("/dashboard");
-    }
-  }, [authLoading, user, userData, router]);
-
-  useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
+      if (!organizationId) return;
 
       try {
         // Fetch availability
-        const availabilityRef = collection(db, "users", user.uid, "availability");
+        const availabilityRef = collection(db, "users", organizationId, "availability");
         const snapshot = await getDocs(availabilityRef);
         
         const availabilityData = snapshot.docs.map((doc) => ({
@@ -212,13 +215,18 @@ function AvailabilityContent() {
         setAvailability(availabilityData);
 
         // Fetch event types
-        const eventTypesRef = collection(db, "users", user.uid, "eventTypes");
+        const eventTypesRef = collection(db, "users", organizationId, "eventTypes");
         const eventTypesSnapshot = await getDocs(eventTypesRef);
         const eventTypesData = eventTypesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as EventType[];
         setEventTypes(eventTypesData.filter(e => e.title));
+
+        // Fetch organization name from user data
+        if (userData?.organizationName) {
+          setOrganizationName(userData.organizationName);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -226,10 +234,10 @@ function AvailabilityContent() {
       }
     };
 
-    if (user && userData?.role === "INTERVIEWER") {
+    if (organizationId) {
       fetchData();
     }
-  }, [user, userData]);
+  }, [organizationId, userData]);
 
   const getSelectedDateAvailability = (): DayAvailability | undefined => {
     if (!selectedDate) return undefined;
@@ -238,10 +246,16 @@ function AvailabilityContent() {
   };
 
   const addTimeSlot = async () => {
-    if (!user || !selectedDate) return;
+    if (!organizationId || !selectedDate) return;
 
     const newSlotStartTime = formatTimeFromParts(startHour, startMinute);
     const newSlotEndTime = formatTimeFromParts(endHour, endMinute);
+
+    // Validate event type selection
+    if (!selectedEventTypeId) {
+      alert("Please select an event type for this time slot!");
+      return;
+    }
 
     // Validate times
     if (newSlotStartTime >= newSlotEndTime) {
@@ -283,7 +297,7 @@ function AvailabilityContent() {
         a.startTime.localeCompare(b.startTime)
       );
 
-      await setDoc(doc(db, "users", user.uid, "availability", dateStr), {
+      await setDoc(doc(db, "users", organizationId, "availability", dateStr), {
         slots: updatedSlots,
       });
 
@@ -307,7 +321,7 @@ function AvailabilityContent() {
   };
 
   const removeTimeSlot = async (slotId: string) => {
-    if (!user || !selectedDate) return;
+    if (!organizationId || !selectedDate) return;
 
     const dateStr = format(selectedDate, "yyyy-MM-dd");
     const existingDay = availability.find((a) => a.date === dateStr);
@@ -319,10 +333,10 @@ function AvailabilityContent() {
       const updatedSlots = existingDay.slots.filter((s) => s.id !== slotId);
 
       if (updatedSlots.length === 0) {
-        await deleteDoc(doc(db, "users", user.uid, "availability", dateStr));
+        await deleteDoc(doc(db, "users", organizationId, "availability", dateStr));
         setAvailability((prev) => prev.filter((a) => a.date !== dateStr));
       } else {
-        await setDoc(doc(db, "users", user.uid, "availability", dateStr), {
+        await setDoc(doc(db, "users", organizationId, "availability", dateStr), {
           slots: updatedSlots,
         });
         setAvailability((prev) =>
@@ -340,14 +354,14 @@ function AvailabilityContent() {
   };
 
   const clearDayAvailability = async () => {
-    if (!user || !selectedDate) return;
+    if (!organizationId || !selectedDate) return;
     if (!confirm("Clear all slots for this day?")) return;
 
     const dateStr = format(selectedDate, "yyyy-MM-dd");
     setSaving(true);
 
     try {
-      await deleteDoc(doc(db, "users", user.uid, "availability", dateStr));
+      await deleteDoc(doc(db, "users", organizationId, "availability", dateStr));
       setAvailability((prev) => prev.filter((a) => a.date !== dateStr));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -366,6 +380,23 @@ function AvailabilityContent() {
   const newSlotEndTime = formatTimeFromParts(endHour, endMinute);
   const calculatedDuration = getMinutesBetween(newSlotStartTime, newSlotEndTime);
 
+  const saveOrganizationName = async () => {
+    if (!organizationId) return;
+    setSavingOrg(true);
+    try {
+      await updateDoc(doc(db, "users", organizationId), {
+        organizationName: organizationName.trim(),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (error) {
+      console.error("Error saving organization name:", error);
+    } finally {
+      setSavingOrg(false);
+    }
+  };
+
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-[#050507] flex items-center justify-center">
@@ -374,7 +405,7 @@ function AvailabilityContent() {
     );
   }
 
-  if (!user || userData?.role !== "INTERVIEWER") return null;
+  if (!organizationId) return null;
 
   return (
     <div className="min-h-screen bg-[#050507] relative overflow-hidden">
@@ -391,7 +422,7 @@ function AvailabilityContent() {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-20 sm:pt-24">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-24 sm:pt-28">
         {/* Contextual Banner for Event Flow */}
         {preselectedEventType && (
           <div className="mb-6 rounded-2xl bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 p-4 sm:p-5 flex items-center gap-4">
@@ -411,14 +442,55 @@ function AvailabilityContent() {
 
         {/* Header */}
         <div className="mb-6 sm:mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
-              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Availability</h1>
+                <p className="text-sm sm:text-base text-white/50">Configure your schedule</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Availability</h1>
-              <p className="text-sm sm:text-base text-white/50">Configure your schedule</p>
-            </div>
+            <button
+              onClick={() => setShowCompletedPopup(true)}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold text-sm flex items-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Completed
+            </button>
+          </div>
+        </div>
+
+        {/* Organization Name Section */}
+        <div className="mb-6 sm:mb-8 rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4">
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400" />
+            <h2 className="text-base sm:text-lg font-semibold text-white">Organization Name</h2>
+          </div>
+          <p className="text-xs sm:text-sm text-white/40 mb-4">
+            This name will be shown to applicants instead of your personal name
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={organizationName}
+              onChange={(e) => setOrganizationName(e.target.value)}
+              placeholder="e.g., Acme Corporation, TechStart Inc."
+              className="flex-1 h-11 sm:h-12 rounded-xl bg-white/5 border border-white/10 px-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+            />
+            <button
+              onClick={saveOrganizationName}
+              disabled={savingOrg}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all disabled:opacity-50"
+            >
+              {savingOrg ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
+              Save
+            </button>
           </div>
         </div>
 
@@ -476,17 +548,17 @@ function AvailabilityContent() {
                       Add Time Slot
                     </h4>
                     
-                    {/* Event Type Selection */}
-                    {eventTypes.length > 0 && (
-                      <div>
-                        <label className="text-xs text-white/50 mb-3 block">Event Type (Optional)</label>
+                    {/* Event Type Selection - Required */}
+                    <div>
+                      <label className="text-xs text-white/50 mb-3 block">Event Type *</label>
+                      {eventTypes.length > 0 ? (
                         <div className="relative">
                           <select
                             value={selectedEventTypeId}
                             onChange={(e) => setSelectedEventTypeId(e.target.value)}
                             className="w-full h-11 rounded-xl bg-white/5 border border-white/10 px-4 pr-10 text-sm text-white focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all appearance-none cursor-pointer"
                           >
-                            <option value="" className="bg-[#0a0a0f]">No specific event type</option>
+                            <option value="" className="bg-[#0a0a0f]">Select an event type</option>
                             {eventTypes.map((eventType) => (
                               <option key={eventType.id} value={eventType.id} className="bg-[#0a0a0f]">
                                 {eventType.title}
@@ -495,13 +567,15 @@ function AvailabilityContent() {
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                         </div>
-                        {eventTypes.length === 0 && (
-                          <Link href="/events" className="text-xs text-violet-400 hover:text-violet-300 mt-2 inline-block">
-                            Create event types →
+                      ) : (
+                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm">
+                          <p className="mb-2">You need to create an event type first</p>
+                          <Link href="/events" className="text-xs text-amber-300 hover:text-amber-200 font-medium">
+                            Go to Events →
                           </Link>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
                     
                     {/* Time Selection - Start & End */}
                     <div className="grid grid-cols-2 gap-4">
@@ -676,6 +750,81 @@ function AvailabilityContent() {
           </div>
         </div>
       </div>
+
+      {/* Completed Popup Modal - Event-specific booking links */}
+      {showCompletedPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowCompletedPopup(false)}
+          />
+          <div className="relative w-full max-w-lg rounded-2xl sm:rounded-3xl bg-[#0a0a12] border border-white/10 shadow-2xl shadow-violet-500/10 p-6 sm:p-8">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-emerald-500/30">
+                <Share2 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-white mb-2">
+                Share Booking Link with Applicant
+              </h3>
+              <p className="text-sm sm:text-base text-white/50">
+                Copy the booking link for the specific event type you want to share.
+              </p>
+            </div>
+
+            {eventTypes.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-white/40 mb-4">No event types created yet</p>
+                <Link href="/events">
+                  <button className="px-4 py-2 rounded-xl bg-violet-500/20 text-violet-400 text-sm font-medium hover:bg-violet-500/30 transition-all">
+                    Create Event Types →
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {eventTypes.map((eventType) => (
+                  <div
+                    key={eventType.id}
+                    className="p-4 rounded-xl bg-white/5 border border-white/10"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: eventType.color || "#8b5cf6" }}
+                      />
+                      <span className="font-semibold text-white">{eventType.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 px-3 py-2 rounded-lg bg-black/30 text-xs text-white/60 truncate">
+                        {typeof window !== "undefined" ? window.location.origin : ""}/book/{organizationId}/{eventType.slug}
+                      </div>
+                      <button
+                        onClick={() => {
+                          const link = `${window.location.origin}/book/${organizationId}/${eventType.slug}`;
+                          navigator.clipboard.writeText(link);
+                          setCopiedLink(true);
+                          setTimeout(() => setCopiedLink(false), 2000);
+                        }}
+                        className="px-3 py-2 rounded-lg bg-violet-500/20 text-violet-400 text-sm font-medium hover:bg-violet-500/30 transition-all flex items-center gap-1.5 flex-shrink-0"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowCompletedPopup(false)}
+              className="w-full mt-4 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 font-medium text-sm hover:bg-white/10 hover:text-white transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {

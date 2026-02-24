@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { format, addMinutes, isSameDay, isFuture } from "date-fns";
 import { doc, getDoc, collection, getDocs, addDoc, query, where, serverTimestamp, updateDoc } from "firebase/firestore";
@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   Loader2,
   Video,
-  ExternalLink,
   AlertTriangle,
   XCircle,
   Phone,
@@ -24,7 +23,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-const INTERVIEW_DURATION = 30; // Default interview duration in minutes
+const INTERVIEW_DURATION = 30;
 
 interface InterviewerData {
   uid: string;
@@ -38,6 +37,7 @@ interface InterviewerData {
 interface EventType {
   id: string;
   title: string;
+  slug: string;
   description: string;
   color: string;
   meetingLink?: string;
@@ -183,15 +183,15 @@ function DarkCalendar({
   );
 }
 
-export default function BookingPage({
+export default function EventBookingPage({
   params,
 }: {
-  params: Promise<{ interviewerId: string }>;
+  params: Promise<{ interviewerId: string; slug: string }>;
 }) {
-  const { interviewerId } = use(params);
+  const { interviewerId, slug } = use(params);
   const router = useRouter();
   const [interviewer, setInterviewer] = useState<InterviewerData | null>(null);
-  const [eventTypes, setEventTypes] = useState<EventType[]>([]);
+  const [eventType, setEventType] = useState<EventType | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | undefined>();
@@ -211,7 +211,6 @@ export default function BookingPage({
     notes: "",
   });
   const [availability, setAvailability] = useState<DayAvailability[]>([]);
-  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -229,15 +228,19 @@ export default function BookingPage({
           });
         }
 
-        // Fetch event types
+        // Fetch event type by slug
         const eventTypesRef = collection(db, "users", interviewerId, "eventTypes");
         const eventTypesSnapshot = await getDocs(eventTypesRef);
-        const eventTypesData = eventTypesSnapshot.docs
+        const foundEventType = eventTypesSnapshot.docs
           .map((doc) => ({
             id: doc.id,
             ...doc.data(),
-          })) as EventType[];
-        setEventTypes(eventTypesData.filter(e => e.title)); // Only include valid event types
+          }) as EventType)
+          .find((e) => e.slug === slug);
+        
+        if (foundEventType) {
+          setEventType(foundEventType);
+        }
 
         const availabilityRef = collection(db, "users", interviewerId, "availability");
         const availabilitySnapshot = await getDocs(availabilityRef);
@@ -245,6 +248,7 @@ export default function BookingPage({
           date: doc.id,
           slots: doc.data().slots || [],
         })) as DayAvailability[];
+        
         setAvailability(availabilityData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -254,13 +258,11 @@ export default function BookingPage({
     };
 
     fetchData();
-  }, [interviewerId]);
-
-  // No login required for applicants - they just fill in their details
+  }, [interviewerId, slug]);
 
   useEffect(() => {
     const fetchSlots = async () => {
-      if (!selectedDate) return;
+      if (!selectedDate || !eventType) return;
 
       setLoadingSlots(true);
       setSelectedTime(undefined);
@@ -302,13 +304,12 @@ export default function BookingPage({
         const now = new Date();
         const availableSlots: TimeSlot[] = [];
 
-        // Filter slots by selected event type
-        const filteredDaySlots = selectedEventTypeId
-          ? dayAvailability.slots.filter((slot) => slot.eventTypeId === selectedEventTypeId)
-          : dayAvailability.slots;
+        // Filter slots by this specific event type
+        const filteredDaySlots = dayAvailability.slots.filter(
+          (slot) => slot.eventTypeId === eventType.id
+        );
 
         for (const slot of filteredDaySlots) {
-          // Use the slot's duration or default to INTERVIEW_DURATION
           const slotDuration = slot.duration || INTERVIEW_DURATION;
           
           const [hours, minutes] = slot.startTime.split(":").map(Number);
@@ -346,11 +347,11 @@ export default function BookingPage({
     };
 
     fetchSlots();
-  }, [selectedDate, interviewerId, availability, selectedEventTypeId]);
+  }, [selectedDate, interviewerId, availability, eventType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTime || !interviewer || !selectedSlotData) return;
+    if (!selectedTime || !interviewer || !selectedSlotData || !eventType) return;
 
     setSubmitting(true);
 
@@ -387,11 +388,6 @@ export default function BookingPage({
         return;
       }
 
-      // Get event type details if available
-      const eventType = selectedSlotData.eventTypeId 
-        ? eventTypes.find(e => e.id === selectedSlotData.eventTypeId)
-        : null;
-
       const bookingData = {
         interviewerId,
         interviewerName: interviewer.name,
@@ -403,11 +399,11 @@ export default function BookingPage({
         startTime,
         endTime,
         duration,
-        eventTypeId: selectedSlotData.eventTypeId || null,
-        eventTypeTitle: eventType?.title || "Interview",
-        eventTypeColor: eventType?.color || "#6366f1",
+        eventTypeId: eventType.id,
+        eventTypeTitle: eventType.title,
+        eventTypeColor: eventType.color || "#6366f1",
         notes: formData.notes || null,
-        meetingLink: eventType?.meetingLink || null,
+        meetingLink: eventType.meetingLink || null,
         status: "CONFIRMED",
         createdAt: serverTimestamp(),
       };
@@ -420,7 +416,7 @@ export default function BookingPage({
         endTime,
         interviewerName: interviewer.name,
         interviewerEmail: interviewer.email,
-        meetingLink: eventType?.meetingLink || null,
+        meetingLink: eventType.meetingLink || null,
         organizationName: interviewer.organizationName,
         bookingId: docRef.id,
       });
@@ -433,23 +429,16 @@ export default function BookingPage({
     }
   };
 
-  // Filter available dates based on selected event type
-  const availableDates = availability
-    .filter((a) => {
-      if (!selectedEventTypeId) return true;
-      return a.slots.some((slot) => slot.eventTypeId === selectedEventTypeId);
-    })
-    .map((a) => new Date(a.date));
+  // Filter available dates based on this event type
+  const availableDates = useMemo(() => {
+    if (!eventType) return [];
+    return availability
+      .filter((a) => a.slots.some((slot) => slot.eventTypeId === eventType.id))
+      .map((a) => new Date(a.date));
+  }, [availability, eventType]);
 
-  // Get selected slot duration for display
   const getSelectedSlotDuration = () => {
     return selectedSlotData?.duration || INTERVIEW_DURATION;
-  };
-
-  // Get event type for selected slot
-  const getSelectedEventType = () => {
-    if (!selectedSlotData?.eventTypeId) return null;
-    return eventTypes.find(e => e.id === selectedSlotData.eventTypeId);
   };
 
   const cancelExistingBooking = async () => {
@@ -483,7 +472,7 @@ export default function BookingPage({
       setSelectedDate(undefined);
       setSelectedTime(undefined);
       setSelectedSlotData(null);
-      setFormData({ name: "", email: "", phoneNumber: "", notes: "" });
+      setFormData({ name: "", email: "", phone: "", notes: "" });
       setStep("date");
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -501,11 +490,11 @@ export default function BookingPage({
     );
   }
 
-  if (!interviewer) {
+  if (!interviewer || !eventType) {
     return (
       <div className="min-h-screen bg-[#050507] flex items-center justify-center p-4">
         <div className="rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-12 text-center max-w-md">
-          <h3 className="text-xl font-semibold text-white mb-2">Interviewer not found</h3>
+          <h3 className="text-xl font-semibold text-white mb-2">Event not found</h3>
           <p className="text-white/40 mb-6">
             This booking link may be invalid or expired
           </p>
@@ -551,12 +540,6 @@ export default function BookingPage({
                 {existingBooking.startTime && format(existingBooking.startTime, "h:mm a")} - {existingBooking.endTime && format(existingBooking.endTime, "h:mm a")}
               </p>
             </div>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <User className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0" />
-              <p className="text-sm sm:text-base text-white/70 truncate">
-                {existingBooking.interviewerName || existingBooking.interviewerEmail}
-              </p>
-            </div>
           </div>
 
           <div className="space-y-3">
@@ -575,10 +558,10 @@ export default function BookingPage({
               )}
             </button>
             <button
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push("/")}
               className="w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white text-sm sm:text-base font-medium hover:bg-white/10 transition-all"
             >
-              Go to Dashboard
+              Go Back
             </button>
           </div>
         </div>
@@ -605,7 +588,7 @@ export default function BookingPage({
             <div className="flex items-center gap-3 sm:gap-4">
               <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="font-semibold text-white text-sm sm:text-base">Interview</p>
+                <p className="font-semibold text-white text-sm sm:text-base">{eventType.title}</p>
                 <p className="text-xs sm:text-sm text-white/50 truncate">
                   {format(booking.startTime, "EEE, MMM d, yyyy")}
                 </p>
@@ -652,7 +635,7 @@ export default function BookingPage({
                 <div>
                   <p className="text-sm sm:text-base font-medium text-white mb-1">Meeting Details Pending</p>
                   <p className="text-xs sm:text-sm text-white/50">
-                    The meeting link and additional details will be communicated to you via email within 1-2 business days. Please ensure your contact information is correct.
+                    The meeting link and additional details will be communicated to you via email within 1-2 business days.
                   </p>
                 </div>
               </div>
@@ -696,11 +679,11 @@ export default function BookingPage({
 
       <div className="relative max-w-5xl mx-auto px-4 py-6 sm:py-12">
         <button
-          onClick={() => router.push("/book")}
+          onClick={() => router.push(`/book/${interviewerId}`)}
           className="mb-4 sm:mb-8 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2 text-sm sm:text-base"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to interviewers
+          Back to all events
         </button>
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
@@ -726,34 +709,18 @@ export default function BookingPage({
                   </div>
                 </div>
 
-                <div className="w-full h-1 sm:h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 mb-4 sm:mb-5" />
+                <div 
+                  className="w-full h-1 sm:h-1.5 rounded-full mb-4 sm:mb-5"
+                  style={{ backgroundColor: eventType.color || "#8b5cf6" }}
+                />
 
-                <h2 className="text-lg sm:text-2xl font-bold text-white mb-1 sm:mb-2">Interview Session</h2>
-                <p className="text-white/40 text-xs sm:text-sm">
-                  Book a time slot for your interview
-                </p>
+                <h2 className="text-lg sm:text-2xl font-bold text-white mb-1 sm:mb-2">{eventType.title}</h2>
+                {eventType.description && (
+                  <p className="text-white/40 text-xs sm:text-sm">
+                    {eventType.description}
+                  </p>
+                )}
               </div>
-
-              {/* Selected Event Type Details */}
-              {selectedEventTypeId && (() => {
-                const et = eventTypes.find(e => e.id === selectedEventTypeId);
-                if (!et) return null;
-                return (
-                  <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 sm:p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: et.color || "#6366f1" }}
-                      />
-                      <p className="text-xs font-medium text-white/50 uppercase tracking-wider">Selected Event</p>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-2">{et.title}</h3>
-                    {et.description && (
-                      <p className="text-xs sm:text-sm text-white/50 leading-relaxed">{et.description}</p>
-                    )}
-                  </div>
-                );
-              })()}
 
               {/* Selected Time Summary */}
               {selectedDate && selectedTime && selectedSlotData && (
@@ -762,17 +729,6 @@ export default function BookingPage({
                     Selected Time
                   </p>
                   <div className="space-y-2">
-                    {getSelectedEventType() && (
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: getSelectedEventType()?.color || "#6366f1" }}
-                        />
-                        <span className="text-xs font-medium text-violet-300">
-                          {getSelectedEventType()?.title}
-                        </span>
-                      </div>
-                    )}
                     <p className="font-semibold text-violet-300 text-sm sm:text-base">
                       {format(new Date(selectedTime), "EEE, MMM d")}
                     </p>
@@ -791,65 +747,12 @@ export default function BookingPage({
 
           {/* Main Content */}
           <div className="lg:col-span-2 order-1 lg:order-2 space-y-4 sm:space-y-6">
-            {/* Event Type Selection */}
-            {eventTypes.length > 0 && (
-              <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
-                <div className="p-4 sm:p-6 border-b border-white/10">
-                  <h2 className="text-lg sm:text-xl font-bold text-white">Select Session Type</h2>
-                  <p className="text-white/40 text-xs sm:text-sm mt-1">
-                    Choose the type of interview you&apos;d like to book
-                  </p>
-                </div>
-                <div className="p-4 sm:p-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {eventTypes.map((eventType) => (
-                      <button
-                        key={eventType.id}
-                        onClick={() => {
-                          setSelectedEventTypeId(eventType.id);
-                          setSelectedDate(undefined);
-                          setSelectedTime(undefined);
-                          setSelectedSlotData(null);
-                        }}
-                        className={cn(
-                          "p-4 rounded-xl border-2 text-left transition-all duration-200",
-                          selectedEventTypeId === eventType.id
-                            ? "border-violet-500 bg-violet-500/10"
-                            : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]"
-                        )}
-                      >
-                        <div className="flex items-center gap-2.5 mb-1.5">
-                          <div
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: eventType.color || "#6366f1" }}
-                          />
-                          <span className="text-sm sm:text-base font-semibold text-white">
-                            {eventType.title}
-                          </span>
-                        </div>
-                        {eventType.description && (
-                          <p className="text-xs sm:text-sm text-white/40 line-clamp-2 ml-[22px]">
-                            {eventType.description}
-                          </p>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {step === "date" ? (
-              <div className={cn(
-                "rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden transition-opacity duration-200",
-                eventTypes.length > 0 && !selectedEventTypeId && "opacity-50 pointer-events-none"
-              )}>
+              <div className="rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl overflow-hidden">
                 <div className="p-4 sm:p-6 border-b border-white/10">
                   <h2 className="text-lg sm:text-xl font-bold text-white">Select a Date & Time</h2>
                   <p className="text-white/40 text-xs sm:text-sm mt-1">
-                    {eventTypes.length > 0 && !selectedEventTypeId
-                      ? "Please select a session type first"
-                      : "Green dates have available slots"}
+                    Green dates have available slots for {eventType.title}
                   </p>
                 </div>
                 <div className="p-4 sm:p-6">

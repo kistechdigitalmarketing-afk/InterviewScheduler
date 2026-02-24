@@ -127,28 +127,17 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-10 sm:mb-16 px-4 sm:px-0">
-              {user ? (
-                <Link href="/dashboard" className="w-full sm:w-auto">
-                  <button className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-base sm:text-lg hover:shadow-2xl hover:shadow-violet-500/30 transition-all duration-300 flex items-center justify-center gap-3">
-                    Go to Dashboard
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </Link>
-              ) : (
-                <>
-                  <Link href="/register" className="w-full sm:w-auto">
-                    <button className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-base sm:text-lg hover:shadow-2xl hover:shadow-violet-500/30 transition-all duration-300 flex items-center justify-center gap-3">
-                      Get Started Free
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </Link>
-                  <Link href="/book" className="w-full sm:w-auto">
-                    <button className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-white font-semibold text-base sm:text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300">
-                      Book an Interview
-                    </button>
-                  </Link>
-                </>
-              )}
+              <Link href="/dashboard" className="w-full sm:w-auto">
+                <button className="group w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-base sm:text-lg hover:shadow-2xl hover:shadow-violet-500/30 transition-all duration-300 flex items-center justify-center gap-3">
+                  Go to Dashboard
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </Link>
+              <Link href="/book" className="w-full sm:w-auto">
+                <button className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-white font-semibold text-base sm:text-lg hover:bg-white/10 hover:border-white/20 transition-all duration-300">
+                  Book an Interview
+                </button>
+              </Link>
             </div>
 
             {/* Benefits */}
@@ -275,9 +264,9 @@ export default function HomePage() {
                 Join thousands of companies scheduling interviews efficiently.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-                <Link href="/register" className="w-full sm:w-auto">
+                <Link href="/dashboard" className="w-full sm:w-auto">
                   <button className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-semibold text-base sm:text-lg hover:shadow-lg hover:shadow-violet-500/30 transition-all duration-300">
-                    Start for Free
+                    Get Started
                   </button>
                 </Link>
                 <Link href="/book" className="w-full sm:w-auto">

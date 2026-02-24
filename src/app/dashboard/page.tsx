@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format, isPast, isToday, isFuture } from "date-fns";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
   Calendar,
@@ -17,10 +17,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
-  Copy,
-  Check,
   CalendarDays,
   Settings,
+  Phone,
+  Trash2,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,7 @@ interface Booking {
   status: string;
   applicantName: string | null;
   applicantEmail: string;
+  applicantPhone: string | null;
   meetingLink: string | null;
   notes: string | null;
   eventTypeTitle: string;
@@ -43,21 +45,22 @@ interface Booking {
 }
 
 export default function DashboardPage() {
-  const { user, userData, loading: authLoading } = useAuth();
+  const { userData, loading: authLoading, organizationId, initOrganization } = useAuth();
   const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Initialize organization on load
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
+    if (!userData && !authLoading) {
+      initOrganization();
     }
-  }, [authLoading, user, router]);
+  }, [userData, authLoading, initOrganization]);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
+      if (!organizationId) return;
 
       try {
         const bookingsRef = collection(db, "bookings");
@@ -65,7 +68,7 @@ export default function DashboardPage() {
 
         const interviewerQuery = query(
           bookingsRef,
-          where("interviewerId", "==", user.uid)
+          where("interviewerId", "==", organizationId)
         );
         const interviewerSnapshot = await getDocs(interviewerQuery);
         
@@ -81,7 +84,7 @@ export default function DashboardPage() {
 
         const applicantQuery = query(
           bookingsRef,
-          where("applicantId", "==", user.uid)
+          where("applicantId", "==", organizationId)
         );
         const applicantSnapshot = await getDocs(applicantQuery);
         
@@ -110,12 +113,46 @@ export default function DashboardPage() {
       }
     };
 
-    if (user && userData) {
+    if (organizationId && userData) {
       fetchData();
     }
-  }, [user, userData]);
+  }, [organizationId, userData]);
 
   const [activeFilter, setActiveFilter] = useState<"all" | "today" | "upcoming" | "completed">("all");
+
+  const deleteBooking = async (bookingId: string) => {
+    if (!confirm("Are you sure you want to delete this booking? This action cannot be undone.")) {
+      return;
+    }
+    
+    setDeletingId(bookingId);
+    try {
+      await deleteDoc(doc(db, "bookings", bookingId));
+      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      alert("Failed to delete booking. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const cancelBooking = async (bookingId: string) => {
+    setDeletingId(bookingId);
+    try {
+      await updateDoc(doc(db, "bookings", bookingId), {
+        status: "CANCELLED",
+      });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, status: "CANCELLED" } : b))
+      );
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      alert("Failed to cancel booking. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const upcomingBookings = bookings.filter(
     (b) => b.status !== "CANCELLED" && b.startTime && isFuture(b.startTime)
@@ -143,11 +180,6 @@ export default function DashboardPage() {
 
   const filteredBookings = getFilteredBookings();
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}/book/${user?.uid}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   if (authLoading || loading) {
     return (
@@ -157,9 +189,8 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user || !userData) return null;
-
-  const isInterviewer = userData.role === "INTERVIEWER";
+  // Default to interviewer view if no user logged in
+  const isInterviewer = !userData || userData.role === "INTERVIEWER";
 
   return (
     <div className="min-h-screen bg-[#050507] relative overflow-hidden">
@@ -176,7 +207,7 @@ export default function DashboardPage() {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-20 sm:pt-24">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 pt-24 sm:pt-28">
         {/* Header */}
         <div className="mb-6 sm:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4">
@@ -186,7 +217,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
-                  Welcome back, {userData.name?.split(" ")[0] || "there"}! 👋
+                  Welcome back! 👋
                 </h1>
                 <p className="text-sm sm:text-base text-white/50">
                   {isInterviewer
@@ -355,7 +386,7 @@ export default function DashboardPage() {
                                   : (booking.interviewerName || booking.interviewerEmail || "I").charAt(0)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="text-xs sm:text-sm min-w-0">
+                            <div className="text-xs sm:text-sm min-w-0 flex-1">
                               <p className="font-medium text-white truncate">
                                 {isInterviewer
                                   ? booking.applicantName || booking.applicantEmail
@@ -364,6 +395,12 @@ export default function DashboardPage() {
                               <p className="text-white/40">
                                 {isInterviewer ? "Applicant" : "Interviewer"}
                               </p>
+                              {isInterviewer && booking.applicantPhone && (
+                                <div className="flex items-center gap-1 mt-1 text-white/50">
+                                  <Phone className="w-3 h-3" />
+                                  <span>{booking.applicantPhone}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -378,6 +415,34 @@ export default function DashboardPage() {
                               Join Meeting
                               <ExternalLink className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                             </a>
+                          )}
+
+                          {/* Action Buttons */}
+                          {isInterviewer && (
+                            <div className="flex items-center gap-2 mt-3 sm:mt-4">
+                              {booking.status !== "CANCELLED" && (
+                                <button
+                                  onClick={() => cancelBooking(booking.id)}
+                                  disabled={deletingId === booking.id}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-medium hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+                                >
+                                  <X className="w-3 h-3" />
+                                  Cancel
+                                </button>
+                              )}
+                              <button
+                                onClick={() => deleteBooking(booking.id)}
+                                disabled={deletingId === booking.id}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                              >
+                                {deletingId === booking.id ? (
+                                  <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3 h-3" />
+                                )}
+                                Delete
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -425,38 +490,6 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Share Link (Interviewer only) */}
-            {isInterviewer && (
-              <div className="rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-violet-500/30 backdrop-blur-xl overflow-hidden">
-                <div className="p-4 sm:p-6">
-                  <h3 className="font-bold text-white text-sm sm:text-base mb-1 sm:mb-2">Share Your Booking Link</h3>
-                  <p className="text-xs sm:text-sm text-white/60 mb-3 sm:mb-4">
-                    Let applicants book time with you directly
-                  </p>
-                  <div className="flex items-center gap-2 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-black/20 border border-white/10 text-xs sm:text-sm text-white/70 mb-3 sm:mb-4">
-                    <span className="truncate flex-1 text-[10px] sm:text-sm">
-                      {typeof window !== "undefined" ? window.location.origin : ""}/book/{user.uid}
-                    </span>
-                  </div>
-                  <button
-                    onClick={copyLink}
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white text-violet-600 font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-violet-50 transition-colors"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        Copy Link
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
