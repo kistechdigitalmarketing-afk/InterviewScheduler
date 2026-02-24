@@ -453,13 +453,6 @@ function AvailabilityContent() {
                 <p className="text-sm sm:text-base text-white/50">Configure your schedule</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowCompletedPopup(true)}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold text-sm flex items-center gap-2 hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Completed
-            </button>
           </div>
         </div>
 
@@ -749,6 +742,17 @@ function AvailabilityContent() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Completed Button - Fixed at bottom */}
+        <div className="mt-8 mb-4">
+          <button
+            onClick={() => setShowCompletedPopup(true)}
+            className="w-full px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold text-base flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
+          >
+            <CheckCircle2 className="w-5 h-5" />
+            Completed - Share Booking Links
+          </button>
         </div>
       </div>
 
