@@ -1230,7 +1230,7 @@ export default function BookingPage({
                   {/* Guide Message */}
                   <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/30">
                     <p className="text-xs sm:text-sm text-emerald-400 text-center">
-                      💡 Click on highlighted days to schedule them the time slots properly
+                      💡 Click on highlighted days to select your slot
                     </p>
                   </div>
                   
