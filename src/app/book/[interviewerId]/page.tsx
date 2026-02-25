@@ -897,13 +897,6 @@ export default function BookingPage({
       />
 
       <div className="relative max-w-5xl mx-auto px-4 py-6 sm:py-12">
-        <button
-          onClick={() => router.push("/book")}
-          className="mb-4 sm:mb-8 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2 text-sm sm:text-base"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to interviewers
-        </button>
 
         {/* Check Booking Banner - only show on date selection step */}
         {step === "date" && (
