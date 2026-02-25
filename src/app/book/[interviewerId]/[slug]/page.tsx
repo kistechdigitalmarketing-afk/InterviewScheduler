@@ -199,6 +199,9 @@ export default function EventBookingPage({
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [step, setStep] = useState<"date" | "details" | "confirmed" | "has-booking">("date");
+  const [checkEmail, setCheckEmail] = useState("");
+  const [checkingBooking, setCheckingBooking] = useState(false);
+  const [showCheckModal, setShowCheckModal] = useState(false);
   const [booking, setBooking] = useState<Booking | null>(null);
   const [existingBooking, setExistingBooking] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -250,6 +253,42 @@ export default function EventBookingPage({
         })) as DayAvailability[];
         
         setAvailability(availabilityData);
+
+        // Check for existing booking on page load using URL search params
+        let emailParam: string | null = null;
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          emailParam = urlParams.get('email');
+        }
+        if (emailParam) {
+          const bookingsRef = collection(db, "bookings");
+          const emailQuery = query(
+            bookingsRef,
+            where("applicantEmail", "==", emailParam),
+            where("interviewerId", "==", interviewerId),
+            where("status", "in", ["CONFIRMED", "PENDING"])
+          );
+          const emailBookingsSnapshot = await getDocs(emailQuery);
+          
+          const existingFutureBooking = emailBookingsSnapshot.docs.find((doc) => {
+            const data = doc.data();
+            const bookingStartTime = data.startTime?.toDate();
+            return bookingStartTime && isFuture(bookingStartTime);
+          });
+
+          if (existingFutureBooking) {
+            const data = existingFutureBooking.data();
+            setExistingBooking({
+              id: existingFutureBooking.id,
+              ...data,
+              startTime: data.startTime?.toDate(),
+              endTime: data.endTime?.toDate(),
+            });
+            setStep("has-booking");
+            return;
+          }
+        }
+        setStep("date");
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -420,6 +459,11 @@ export default function EventBookingPage({
         organizationName: interviewer.organizationName,
         bookingId: docRef.id,
       });
+      // Update URL with email parameter for future booking detection (without navigation)
+      if (typeof window !== 'undefined') {
+        const newUrl = `${window.location.pathname}?email=${encodeURIComponent(formData.email)}`;
+        window.history.replaceState({}, '', newUrl);
+      }
       setStep("confirmed");
     } catch (error) {
       console.error("Error creating booking:", error);
@@ -439,6 +483,41 @@ export default function EventBookingPage({
 
   const getSelectedSlotDuration = () => {
     return selectedSlotData?.duration || INTERVIEW_DURATION;
+  };
+
+  const checkExistingBooking = async (email: string) => {
+    setCheckingBooking(true);
+    try {
+      const bookingsRef = collection(db, "bookings");
+      const emailQuery = query(
+        bookingsRef,
+        where("applicantEmail", "==", email),
+        where("interviewerId", "==", interviewerId),
+        where("status", "in", ["CONFIRMED", "PENDING"])
+      );
+      const emailBookingsSnapshot = await getDocs(emailQuery);
+      
+      const existingFutureBooking = emailBookingsSnapshot.docs.find((doc) => {
+        const data = doc.data();
+        const bookingStartTime = data.startTime?.toDate();
+        return bookingStartTime && isFuture(bookingStartTime);
+      });
+
+      if (existingFutureBooking) {
+        const data = existingFutureBooking.data();
+        setExistingBooking({
+          id: existingFutureBooking.id,
+          ...data,
+          startTime: data.startTime?.toDate(),
+          endTime: data.endTime?.toDate(),
+        });
+        setStep("has-booking");
+      }
+    } catch (error) {
+      console.error("Error checking booking:", error);
+    } finally {
+      setCheckingBooking(false);
+    }
   };
 
   const cancelExistingBooking = async () => {
@@ -513,34 +592,62 @@ export default function EventBookingPage({
   if (step === "has-booking" && existingBooking) {
     return (
       <div className="min-h-screen bg-[#050507] flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-violet-900/20 via-transparent to-transparent" />
         
         <div className="relative rounded-2xl sm:rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl p-6 sm:p-12 text-center max-w-lg w-full">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-2xl shadow-amber-500/30">
-            <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-2xl shadow-violet-500/30">
+            <CalendarIcon className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">You Already Have a Booking</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">Your Scheduled Interview</h2>
           <p className="text-sm sm:text-base text-white/50 mb-6 sm:mb-8">
-            Cancel your existing booking to schedule a new one.
+            You already have a booking with this interviewer.
           </p>
 
           <div className="rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-6 text-left space-y-3 sm:space-y-4 mb-6 sm:mb-8">
             <div className="flex items-center gap-3 sm:gap-4">
-              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0" />
+              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
               <div className="min-w-0">
-                <p className="font-semibold text-white text-sm sm:text-base">Current Interview</p>
+                <p className="font-semibold text-white text-sm sm:text-base">Interview</p>
                 <p className="text-xs sm:text-sm text-white/50 truncate">
                   {existingBooking.startTime && format(existingBooking.startTime, "EEE, MMM d, yyyy")}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3 sm:gap-4">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0" />
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
               <p className="text-sm sm:text-base text-white/70">
                 {existingBooking.startTime && format(existingBooking.startTime, "h:mm a")} - {existingBooking.endTime && format(existingBooking.endTime, "h:mm a")}
               </p>
             </div>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
+              <p className="text-sm sm:text-base text-white/70 truncate">
+                {existingBooking.interviewerName || existingBooking.interviewerEmail}
+              </p>
+            </div>
           </div>
+
+          {existingBooking.meetingLink && (
+            <div className="w-full rounded-xl sm:rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 sm:p-5 mb-6">
+              <div className="flex items-start gap-3 mb-3">
+                <Video className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm sm:text-base font-medium text-white mb-1">Meeting Link</p>
+                  <p className="text-xs sm:text-sm text-white/50">
+                    Please use the link below to join your interview at the scheduled time.
+                  </p>
+                </div>
+              </div>
+              <a
+                href={existingBooking.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full px-4 py-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/30 transition-all truncate text-center"
+              >
+                {existingBooking.meetingLink}
+              </a>
+            </div>
+          )}
 
           <div className="space-y-3">
             <button
@@ -609,7 +716,7 @@ export default function EventBookingPage({
           </div>
 
           {booking.meetingLink ? (
-            <div className="w-full rounded-xl sm:rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 sm:p-5">
+            <div className="w-full rounded-xl sm:rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 sm:p-5 mb-6">
               <div className="flex items-start gap-3 mb-3">
                 <Video className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div>
@@ -629,9 +736,9 @@ export default function EventBookingPage({
               </a>
             </div>
           ) : (
-            <div className="w-full rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 sm:p-5">
+            <div className="w-full rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 sm:p-5 mb-6">
               <div className="flex items-start gap-3">
-                <Clock className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <Clock className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm sm:text-base font-medium text-white mb-1">Meeting Details Pending</p>
                   <p className="text-xs sm:text-sm text-white/50">
@@ -642,21 +749,50 @@ export default function EventBookingPage({
             </div>
           )}
 
-          {/* Cancel Booking Button */}
-          <button
-            onClick={cancelConfirmedBooking}
-            disabled={cancellingConfirmed}
-            className="mt-6 w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white/70 text-sm sm:text-base font-medium flex items-center justify-center gap-2 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all disabled:opacity-50"
-          >
-            {cancellingConfirmed ? (
-              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>Cancel Booking</span>
-              </>
-            )}
-          </button>
+          {/* Information Message */}
+          <div className="w-full rounded-xl sm:rounded-2xl bg-violet-500/10 border border-violet-500/30 p-4 sm:p-5 mb-6">
+            <div className="flex items-start gap-3">
+              <MessageSquare className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm sm:text-base font-medium text-white mb-1">Important</p>
+                <p className="text-xs sm:text-sm text-white/70 leading-relaxed">
+                  Save this meeting link or use the same booking link and check with your email to access the meeting details.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-3 mt-6 sm:mt-8">
+            <button
+              onClick={() => {
+                // Try to close the window/tab first
+                window.close();
+                // If window.close() doesn't work (browsers block it for security),
+                // redirect to blank page as fallback - this effectively "closes" the view
+                setTimeout(() => {
+                  window.location.href = 'about:blank';
+                }, 100);
+              }}
+              className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm sm:text-base font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all"
+            >
+              Close
+            </button>
+            <button
+              onClick={cancelConfirmedBooking}
+              disabled={cancellingConfirmed}
+              className="w-full px-4 sm:px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white/70 text-sm sm:text-base font-medium flex items-center justify-center gap-2 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all disabled:opacity-50"
+            >
+              {cancellingConfirmed ? (
+                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <XCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>Cancel Booking</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -685,6 +821,105 @@ export default function EventBookingPage({
           <ArrowLeft className="w-4 h-4" />
           Back to all events
         </button>
+
+        {/* Check Booking Banner */}
+        {step === "date" && (
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-violet-400 flex-shrink-0" />
+              <p className="text-xs sm:text-sm text-white/70">
+                Already booked? Check your scheduled interview
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCheckModal(true)}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-violet-500/20 border border-violet-500/30 text-violet-300 text-xs sm:text-sm font-medium hover:bg-violet-500/30 transition-all whitespace-nowrap"
+            >
+              Check Booking
+            </button>
+          </div>
+        )}
+
+        {/* Check Booking Modal */}
+        {showCheckModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="relative rounded-2xl sm:rounded-3xl bg-[#050507] border border-white/10 backdrop-blur-xl p-6 sm:p-12 max-w-md w-full">
+              <button
+                onClick={() => {
+                  setShowCheckModal(false);
+                  setCheckEmail("");
+                }}
+                className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+
+              <div className="text-center mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">Check Your Booking</h2>
+                <p className="text-sm sm:text-base text-white/50">
+                  Enter your email to view your scheduled interview
+                </p>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (checkEmail) {
+                    checkExistingBooking(checkEmail);
+                    setShowCheckModal(false);
+                  }
+                }}
+                className="space-y-4 sm:space-y-5"
+              >
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-medium text-white/70">Email Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white/30" />
+                    <input
+                      type="email"
+                      value={checkEmail}
+                      onChange={(e) => setCheckEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full h-11 sm:h-12 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-10 sm:pl-12 pr-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCheckModal(false);
+                      setCheckEmail("");
+                    }}
+                    className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-white text-sm sm:text-base font-medium hover:bg-white/10 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={checkingBooking || !checkEmail}
+                    className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm sm:text-base font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/30 transition-all disabled:opacity-50"
+                  >
+                    {checkingBooking ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Checking...
+                      </>
+                    ) : (
+                      <>
+                        Check Booking
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Sidebar - Interviewer Info & Event Details */}
@@ -756,6 +991,13 @@ export default function EventBookingPage({
                   </p>
                 </div>
                 <div className="p-4 sm:p-6">
+                  {/* Guide Message */}
+                  <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                    <p className="text-xs sm:text-sm text-emerald-400 text-center">
+                      💡 Click on highlighted days to schedule them the time slots properly
+                    </p>
+                  </div>
+                  
                   <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
                     {/* Calendar */}
                     <DarkCalendar
@@ -871,7 +1113,7 @@ export default function EventBookingPage({
                           type="tel"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          placeholder="+1 (555) 123-4567"
+                          placeholder=""
                           className="w-full h-11 sm:h-12 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 pl-10 sm:pl-12 pr-4 text-sm sm:text-base text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition-all"
                         />
                       </div>
